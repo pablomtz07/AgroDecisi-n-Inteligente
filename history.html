@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#166534">
+    <title>Historial | AgroDecisión Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="auth.js?v=20260711-1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="mobile-safe min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.08),_transparent_26%),linear-gradient(180deg,#f8fafc_0%,#eef6ff_100%)] text-slate-800 antialiased">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-emerald-950 via-green-900 to-lime-800 text-white shadow-2xl shadow-emerald-950/20">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <div>
+                <h1 class="flex items-center gap-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                    <span aria-hidden="true">📚</span>
+                    Historial de Escenarios
+                </h1>
+                <p class="mt-1 text-sm text-emerald-100 sm:text-base">
+                    Compará, cargá y exportá escenarios guardados por lote y cultivo.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Volver al Dashboard
+                </a>
+                <button type="button" data-logout class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div id="formStatus" class="hidden mb-6 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm" role="status" aria-live="polite"></div>
+
+        <section class="mb-6 rounded-[2rem] border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="max-w-3xl">
+                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-emerald-600">Historial</p>
+                    <h2 class="mt-2 text-2xl font-extrabold text-slate-950 sm:text-3xl">Escenarios guardados para comparar más rápido</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Buscá decisiones previas, exportalas o abrí la que mejor resultado te dio para seguir trabajando sin perder contexto.
+                    </p>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-3">
+                    <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Escenarios</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-900">Comparar</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Exportación</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-900">CSV</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Estado</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-900">Activo</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-[2rem] border border-slate-200/80 bg-white/92 p-6 shadow-sm backdrop-blur">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
+                        <span aria-hidden="true">📂</span>
+                        Historial de Escenarios Guardados
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Usá filtros para encontrar un caso rápido, abrilo en el dashboard o exportalo a CSV.
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="index.html#dashboard-section" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100">
+                        Dashboard
+                    </a>
+                    <a href="clima.html" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100">
+                        Clima
+                    </a>
+                    <a href="mapa.html" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100">
+                        Mapa
+                    </a>
+                    <button id="btnExportarHistorial" type="button" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100">
+                        Exportar CSV
+                    </button>
+                    <button id="btnBorrarHistorial" type="button" class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-all hover:bg-red-100">
+                        Limpiar Historial
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-4 grid gap-3 md:grid-cols-3">
+                <div>
+                    <label for="filtroLote" class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">Filtrar por lote</label>
+                    <input id="filtroLote" type="text" placeholder="Buscar lote..." class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                </div>
+                <div>
+                    <label for="filtroCultivo" class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">Filtrar por cultivo</label>
+                    <select id="filtroCultivo" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                        <option value="">Todos los cultivos</option>
+                        <option value="soja">Soja</option>
+                        <option value="maiz">Maíz</option>
+                        <option value="trigo">Trigo</option>
+                        <option value="girasol">Girasol</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="btnLimpiarFiltros" type="button" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50">
+                        Limpiar filtros
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Escenarios</p>
+                    <p id="summaryCount" class="mt-1 text-2xl font-extrabold text-slate-900">0</p>
+                    <p class="mt-1 text-xs text-slate-500">Resultados dentro de los filtros activos.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Margen promedio</p>
+                    <p id="summaryAvgMargin" class="mt-1 text-2xl font-extrabold text-emerald-700">--</p>
+                    <p class="mt-1 text-xs text-slate-500">Promedio de margen neto sobre ingreso bruto.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mejor caso</p>
+                    <p id="summaryBest" class="mt-1 text-sm font-semibold text-slate-800">--</p>
+                    <p class="mt-1 text-xs text-slate-500">Escenario con mayor margen neto.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Peor caso</p>
+                    <p id="summaryWorst" class="mt-1 text-sm font-semibold text-slate-800">--</p>
+                    <p class="mt-1 text-xs text-slate-500">Escenario con menor margen neto.</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <th class="p-3">Lote</th>
+                            <th class="p-3">Cultivo</th>
+                            <th class="p-3">Prod. (tn)</th>
+                            <th class="p-3">Hum. Actual</th>
+                            <th class="p-3">Gastos Totales</th>
+                            <th class="p-3">Margen Neto</th>
+                            <th class="p-3">Fecha</th>
+                            <th class="p-3">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial" class="divide-y divide-slate-100 text-slate-600">
+                        <tr>
+                            <td colspan="8" class="p-4 text-center italic text-slate-400">No hay escenarios guardados para comparar todavía.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js?v=20260711-3"></script>
+</body>
+</html>

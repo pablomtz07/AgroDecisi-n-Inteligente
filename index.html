@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#166534">
+    <title>AgroDecisión Inteligente | Cosecha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="auth.js?v=20260711-1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="mobile-safe min-h-screen text-slate-800 antialiased">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-emerald-950 via-green-900 to-lime-800 text-white shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <div>
+                <h1 class="flex items-center gap-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                    <span aria-hidden="true">🌾</span>
+                    AgroDecisión Inteligente
+                </h1>
+                <p class="mt-1 text-sm text-emerald-100 sm:text-base">
+                    Gestión de márgenes comerciales y ventanas de cosecha en tiempo real.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur sm:block">
+                    Versión Pro
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] backdrop-blur">
+                    Cosecha
+                </div>
+                <button type="button" data-logout class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="mx-auto flex max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <aside class="hidden w-72 shrink-0 flex-col justify-between rounded-[2rem] border border-slate-200 bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur md:flex lg:sticky lg:top-24 lg:self-start">
+            <div>
+                <h2 class="mb-6 text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Navegación</h2>
+                <nav class="space-y-2">
+                    <button type="button" id="btnMenuDashboard" data-scroll-to="dashboard-section" data-active="true" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-green-700 transition-all">
+                        <span aria-hidden="true">📊</span>
+                        Dashboard
+                    </button>
+                    <a href="clima.html" id="btnMenuClima" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                        <span aria-hidden="true">🌦️</span>
+                        Clima Avanzado
+                    </a>
+                    <a href="mapa.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                        <span aria-hidden="true">🗺️</span>
+                        Ubicación / Mapa
+                    </a>
+                    <a href="history.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                        <span aria-hidden="true">📚</span>
+                        Historial
+                    </a>
+                </nav>
+            </div>
+
+            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                <p class="font-semibold text-slate-700">Consejo rápido</p>
+                <p class="mt-2">
+                    Calculá el escenario, guardalo y compará cómo cambia el margen según humedad, secada y flete.
+                </p>
+            </div>
+        </aside>
+
+        <main class="min-w-0 flex-1 space-y-5">
+            <section class="premium-panel rounded-[2rem] px-5 py-5 sm:px-6">
+                <div class="flex flex-wrap items-end justify-between gap-4">
+                    <div class="max-w-3xl">
+                        <p class="text-xs font-bold uppercase tracking-[0.3em] text-emerald-600">Dashboard principal</p>
+                        <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Una vista más clara para márgenes, clima y parcelas</h2>
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                            Todo lo importante queda a mano desde el inicio: configurás el lote, revisás clima y ubicación, y comparás el resultado económico sin perder contexto.
+                        </p>
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Acceso</p>
+                            <p class="mt-1 text-lg font-extrabold text-slate-900">Rápido</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Estado</p>
+                            <p class="mt-1 text-lg font-extrabold text-slate-900">Activo</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Vista</p>
+                            <p class="mt-1 text-lg font-extrabold text-slate-900">Premium</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="rounded-3xl border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur md:hidden">
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <button type="button" data-scroll-to="dashboard-section" data-active="true" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center text-[11px] font-semibold text-green-700">
+                        <span class="text-base" aria-hidden="true">📊</span>
+                        Dashboard
+                    </button>
+                    <a href="clima.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center text-[11px] font-semibold text-slate-600">
+                        <span class="text-base" aria-hidden="true">🌦️</span>
+                        Clima
+                    </a>
+                    <a href="mapa.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center text-[11px] font-semibold text-slate-600">
+                        <span class="text-base" aria-hidden="true">🗺️</span>
+                        Mapa
+                    </a>
+                    <a href="history.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center text-[11px] font-semibold text-slate-600">
+                        <span class="text-base" aria-hidden="true">📚</span>
+                        Historial
+                    </a>
+                </div>
+            </div>
+
+            <div id="formStatus" class="hidden rounded-[1.5rem] border px-4 py-3 text-sm font-medium shadow-sm" role="status" aria-live="polite"></div>
+
+            <section id="dashboard-section" class="grid items-start gap-6 lg:grid-cols-12">
+                <section class="premium-card space-y-5 rounded-[2rem] p-6 lg:col-span-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Configuración del Lote</h2>
+                        <p class="mt-1 text-xs text-slate-400">
+                            Definí los parámetros operativos y costos logísticos.
+                        </p>
+                    </div>
+
+                    <form class="space-y-4" novalidate>
+                        <div>
+                            <label for="lote" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Lote / Campo</label>
+                            <input type="text" id="lote" maxlength="60" placeholder="Ej: Lote San Martín" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                        </div>
+
+                        <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Ubicación del lote</p>
+                                    <p class="mt-1 text-[11px] text-slate-400">Elegí el punto en el mapa y vuelve cargado al formulario.</p>
+                                </div>
+                                <a href="mapa.html" class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100">
+                                    Elegir en mapa
+                                </a>
+                            </div>
+                            <p id="parcelaResumen" class="text-[11px] font-semibold text-emerald-700">Parcela: sin marcar</p>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="latitud" class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Latitud</label>
+                                    <input type="number" id="latitud" step="0.0001" inputmode="decimal" placeholder="-38.0000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                                </div>
+                                <div>
+                                    <label for="longitud" class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Longitud</label>
+                                    <input type="number" id="longitud" step="0.0001" inputmode="decimal" placeholder="-60.0000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="cultivo" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de Cultivo</label>
+                            <select id="cultivo" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                                <option value="soja">🌱 Soja (Base: 13.5%)</option>
+                                <option value="maiz" selected>🌽 Maíz (Base: 14.5%)</option>
+                                <option value="trigo">🌾 Trigo (Base: 14.0%)</option>
+                                <option value="girasol">🌻 Girasol (Base: 11.0%)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="precio" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Precio ($/tn)</label>
+                                <input type="number" id="precio" min="0" step="0.01" inputmode="decimal" placeholder="0.00" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                    <p id="precioFuente" class="text-[11px] font-semibold text-slate-400">Referencia: sin cargar</p>
+                                    <button id="btnCargarPrecio" type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100">
+                                        Precio internet
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="costoSecada" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Costo Secada / Punto</label>
+                                <input type="number" id="costoSecada" min="0" step="0.01" inputmode="decimal" placeholder="0.00" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="humedadActual" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Humedad Actual (%)</label>
+                                <input type="text" id="humedadActual" inputmode="decimal" autocomplete="off" placeholder="0%" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                    <p id="humedadOrigen" class="text-[11px] font-semibold text-slate-400">Origen: clima</p>
+                                    <button id="btnUsarHumedadClima" type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100">
+                                        Usar clima
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="humedadBase" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Humedad Base (%)</label>
+                                <input type="number" id="humedadBase" value="14.5" readonly aria-readonly="true" class="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-slate-600">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="hectareas" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Hectáreas (ha)</label>
+                                <input type="number" id="hectareas" min="0" step="0.1" inputmode="decimal" placeholder="0" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                    <p id="hectareasOrigen" class="text-[11px] font-semibold text-slate-400">Origen: manual</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button id="btnRecalcularHectareas" type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100">
+                                            Recalcular
+                                        </button>
+                                        <button id="btnEditarHectareas" type="button" class="rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition-all hover:bg-slate-200">
+                                            Editar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="rendimiento" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Rendimiento (tn/ha)</label>
+                                <input type="number" id="rendimiento" min="0" step="0.01" inputmode="decimal" placeholder="0.00" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 focus:border-green-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-600/5">
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <span class="block text-xs font-bold uppercase tracking-wider text-slate-500">🚛 Costo Logístico (Flete Largo/Corto)</span>
+                            <p class="text-[11px] text-slate-400">Cargá el costo por tonelada y por kilómetro. Si no lo sabés, dejalo en 0 para probar.</p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="tarifaFlete" class="block text-[10px] font-bold uppercase text-slate-400">Tarifa Flete ($/tn/km)</label>
+                                    <input type="number" id="tarifaFlete" min="0" step="0.01" inputmode="decimal" placeholder="Ej: 12.50" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                                </div>
+                                <div>
+                                    <label for="distanciaFlete" class="block text-[10px] font-bold uppercase text-slate-400">Distancia (km)</label>
+                                    <input type="number" id="distanciaFlete" min="0" step="0.1" inputmode="decimal" placeholder="Ej: 85" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button id="btnCalcular" type="button" class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-700 to-emerald-600 px-4 py-3 font-semibold text-white shadow-md shadow-emerald-700/20 transition-all hover:from-green-800 hover:to-emerald-700">
+                                <span aria-hidden="true">🧮</span>
+                                Calcular
+                            </button>
+                            <button id="btnGuardar" type="button" class="rounded-xl border border-slate-200 bg-slate-100 px-4 font-semibold text-slate-700 transition-all hover:bg-slate-200" title="Guardar simulación">
+                                💾
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="space-y-6 lg:col-span-7">
+                    <div class="premium-card rounded-[2rem] p-5 sm:p-6">
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold text-slate-900">Dashboard de Resultados</h2>
+                            <p class="mt-1 text-sm text-slate-500">Resumen económico, recomendaciones y visualización del escenario actual.</p>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-emerald-600 bg-gradient-to-br from-slate-50 to-emerald-50/40 p-4">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🌾 Producción Total</h3>
+                                <p id="produccion" class="mt-1 text-2xl font-extrabold text-slate-800">---</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-green-600 bg-gradient-to-br from-slate-50 to-green-50/40 p-4">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">💰 Ingreso Bruto</h3>
+                                <p id="ingreso" class="mt-1 text-2xl font-extrabold text-slate-800">---</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-orange-500 bg-gradient-to-br from-slate-50 to-orange-50/40 p-4">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🔥 Gastos (Secada + Flete)</h3>
+                                <p id="costos" class="mt-1 text-2xl font-extrabold text-slate-800">---</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-blue-600 bg-gradient-to-br from-slate-50 to-blue-50/40 p-4">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">📈 Margen Neto Bolsillo</h3>
+                                <p id="resultado" class="mt-1 text-2xl font-extrabold text-blue-600">---</p>
+                            </div>
+
+                            <div class="sm:col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/60 p-5">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🤖 Asistente Agronómico Activo</h3>
+                                <p id="recomendacion" class="mt-2 text-base font-semibold text-slate-700">Esperando simulación...</p>
+                            </div>
+
+                            <div class="sm:col-span-2 mt-2 h-72 rounded-2xl border border-slate-100 bg-white/90 p-4">
+                                <canvas id="graficoRentabilidad"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section id="clima-section" class="premium-card rounded-[2rem] p-6">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
+                            <span aria-hidden="true">🌦️</span>
+                            Monitoreo Climático y Alertas de Lote
+                        </h2>
+                        <p id="climaUbicacion" class="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ubicación: --</p>
+                    </div>
+                    <a href="clima.html" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100">
+                        Abrir clima completo
+                    </a>
+                </div>
+                <div id="clima" class="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+                    <span class="animate-pulse text-slate-400">Conectando con estación meteorológica...</span>
+                </div>
+                <div class="mt-4 rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50 to-emerald-50 p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Mapa del lote</p>
+                            <p class="mt-1 text-sm text-slate-600">Abrí la ubicación aparte para elegir el punto exacto en pantalla completa.</p>
+                        </div>
+                        <a href="mapa.html" class="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-50">
+                            Abrir mapa
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js?v=20260711-3"></script>
+</body>
+</html>
