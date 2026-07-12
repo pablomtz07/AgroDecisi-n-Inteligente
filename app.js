@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         parcelPreviewLayer: null,
         parcelPoints: [],
         parcelDrawing: false,
-        humiditySource: "climate",
+        humiditySource: "manual",
         priceRequestId: 0,
         climateForecast: null
     };
@@ -637,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
         nextPayload.precioSourceSymbol = elements.precio?.dataset.priceSourceSymbol || nextPayload.precioSourceSymbol || "";
         nextPayload.precioSourceName = elements.precio?.dataset.priceSourceName || nextPayload.precioSourceName || "";
         nextPayload.hectareasSource = elements.hectareas?.dataset.areaSource || nextPayload.hectareasSource || "manual";
-        nextPayload.humedadSource = elements.humedadActual?.dataset.humiditySource || nextPayload.humedadSource || "climate";
+        nextPayload.humedadSource = elements.humedadActual?.dataset.humiditySource || nextPayload.humedadSource || "manual";
 
         writeJson(STORAGE_KEYS.form, nextPayload);
     }
@@ -701,8 +701,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const hasExplicitSource = savedForm && Object.prototype.hasOwnProperty.call(savedForm, "humedadSource");
         const source = hasExplicitSource
-            ? (savedForm.humedadSource || "climate")
-            : (elements.humedadActual.dataset.humiditySource || "climate");
+            ? (savedForm.humedadSource || "manual")
+            : (elements.humedadActual.dataset.humiditySource || "manual");
 
         setHumiditySource(source);
     }
@@ -935,12 +935,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (elements.btnUsarHumedadClima) {
-            elements.btnUsarHumedadClima.textContent = normalizedSource === "climate" ? "Usar clima" : "Tomar clima";
+            elements.btnUsarHumedadClima.textContent = normalizedSource === "climate" ? "Editar manual" : "Usar clima";
         }
     }
 
     function getHumiditySource() {
-        return elements.humedadActual?.dataset.humiditySource || "climate";
+        return elements.humedadActual?.dataset.humiditySource || "manual";
     }
 
     function markHumidityAsManual() {
@@ -1360,19 +1360,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const humiditySource = getHumiditySource();
         let humidityActual = readHumidityValue();
 
-        if (humiditySource === "climate" && Number.isFinite(state.climate?.humidity)) {
+        if (!Number.isFinite(humidityActual) && humiditySource === "climate" && Number.isFinite(state.climate?.humidity)) {
             humidityActual = state.climate.humidity;
-            const normalizedHumidity = humidityActual.toFixed(1);
-            if (elements.humedadActual.value !== normalizedHumidity) {
-                elements.humedadActual.value = normalizedHumidity;
-                saveFormState();
-            }
-        }
-
-        if (!Number.isFinite(humidityActual) && Number.isFinite(state.climate?.humidity)) {
-            humidityActual = state.climate.humidity;
-            elements.humedadActual.value = humidityActual.toFixed(1);
-            saveFormState();
         }
 
         return {
@@ -1387,8 +1376,8 @@ document.addEventListener("DOMContentLoaded", () => {
             precioSourceSymbol: elements.precio?.dataset.priceSourceSymbol || "",
             precioSourceName: elements.precio?.dataset.priceSourceName || "",
             costoSecada: parseNumber(elements.costoSecada.value),
-            humedadActual,
-            humedadBase,
+            humedadActual: humidityActual,
+            humedadBase: humidityBase,
             hectareas: parseNumber(elements.hectareas.value),
             rendimiento: parseNumber(elements.rendimiento.value),
             tarifaFlete: parseOptionalNumber(elements.tarifaFlete?.value, 0),
@@ -1401,17 +1390,16 @@ document.addEventListener("DOMContentLoaded", () => {
             return NaN;
         }
 
-        const climateHumidity = Number.isFinite(state.climate?.humidity) ? state.climate.humidity : NaN;
         const rawValue = String(elements.humedadActual.value ?? "").trim();
 
-        return normalizeHumidityInput(rawValue, climateHumidity);
+        return normalizeHumidityInput(rawValue);
     }
 
-    function normalizeHumidityInput(rawValue, climateHumidity = NaN) {
+    function normalizeHumidityInput(rawValue) {
         const text = String(rawValue ?? "").trim();
 
         if (!text) {
-            return climateHumidity;
+            return NaN;
         }
 
         const parsed = parseNumber(text);
@@ -1433,12 +1421,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        return climateHumidity;
+        return NaN;
     }
 
     function validateForm(form) {
         const invalidIds = [];
-        const humidityActual = normalizeHumidityInput(elements.humedadActual?.value, state.climate?.humidity ?? NaN);
+        const humidityActual = form.humedadActual;
 
         if (!Number.isFinite(form.precio) || form.precio <= 0) {
             invalidIds.push("precio");
@@ -2008,8 +1996,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     precipitation
                 };
                 state.climateForecast = data;
-
-                syncHumidityFromClimate({ force: false });
 
                 if (renderDashboard) {
                     renderDashboardClimate({
