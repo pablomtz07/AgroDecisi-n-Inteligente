@@ -1,4 +1,4 @@
-const CACHE_NAME = "cosecha-shell-v2";
+const CACHE_NAME = "cosecha-shell-v3";
 const PRECACHE_URLS = [
     "/login.html",
     "/index.html",
@@ -42,11 +42,16 @@ self.addEventListener("fetch", (event) => {
 
     const url = new URL(request.url);
 
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
     if (request.mode === "navigate") {
         event.respondWith(
             fetch(request).catch(async () => {
                 const cache = await caches.open(CACHE_NAME);
                 return (
+                    (await cache.match(new URL(request.url).pathname)) ||
                     (await cache.match(request)) ||
                     (await cache.match("/login.html")) ||
                     Response.error()
@@ -56,21 +61,24 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    if (url.origin === self.location.origin) {
-        event.respondWith(
-            caches.match(request, { ignoreSearch: true }).then((cachedResponse) => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
+    event.respondWith(
+        (async () => {
+            const cache = await caches.open(CACHE_NAME);
 
-                return fetch(request)
-                    .then((response) => {
-                        const responseToCache = response.clone();
-                        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
-                        return response;
-                    })
-                    .catch(() => caches.match("/login.html"));
-            })
-        );
-    }
+            try {
+                const response = await fetch(request);
+                if (response && response.ok) {
+                    await cache.put(request, response.clone());
+                    await cache.put(new URL(request.url).pathname, response.clone());
+                }
+                return response;
+            } catch {
+                return (
+                    (await cache.match(request)) ||
+                    (await cache.match(new URL(request.url).pathname)) ||
+                    Response.error()
+                );
+            }
+        })()
+    );
 });
