@@ -136,6 +136,18 @@
         });
     }
 
+    function registerServiceWorker() {
+        if (!("serviceWorker" in navigator) || window.location.protocol === "file:") {
+            return;
+        }
+
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {
+                // Si el SW falla, la app sigue funcionando normal.
+            });
+        });
+    }
+
     window.CosechaAuth = {
         login,
         logout,
@@ -147,4 +159,5 @@
 
     requireAuth();
     installLogoutHandler();
+    registerServiceWorker();
 })();
