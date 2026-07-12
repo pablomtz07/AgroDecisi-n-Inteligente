@@ -135,6 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
         costos: $("costos"),
         resultado: $("resultado"),
         recomendacion: $("recomendacion"),
+        alertasLista: $("alertasLista"),
+        alertasConteo: $("alertasConteo"),
         graficoRentabilidad: $("graficoRentabilidad"),
         clima: $("clima"),
         climaUbicacion: $("climaUbicacion"),
@@ -207,6 +209,20 @@ document.addEventListener("DOMContentLoaded", () => {
         warning: "text-amber-600",
         danger: "text-red-600",
         info: "text-slate-600"
+    };
+
+    const alertToneClasses = {
+        success: "border-emerald-200 bg-emerald-50 text-emerald-900",
+        warning: "border-amber-200 bg-amber-50 text-amber-900",
+        danger: "border-red-200 bg-red-50 text-red-900",
+        info: "border-blue-200 bg-blue-50 text-blue-900"
+    };
+
+    const alertToneBadgeClasses = {
+        success: "border-emerald-200 bg-emerald-100 text-emerald-800",
+        warning: "border-amber-200 bg-amber-100 text-amber-800",
+        danger: "border-red-200 bg-red-100 text-red-800",
+        info: "border-blue-200 bg-blue-100 text-blue-800"
     };
 
     let statusTimeoutId = null;
@@ -1705,7 +1721,149 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.recomendacion.textContent = result.recommendationText;
         elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
 
+        renderAlerts(result);
         renderChart(result.ingresoBruto, result.gastosTotales, result.ingresoNeto);
+    }
+
+    function buildAlerts(result) {
+        const alerts = [];
+        const humidityGap = Number.isFinite(result.humedadActual) && Number.isFinite(result.humedadBase)
+            ? result.humedadActual - result.humedadBase
+            : NaN;
+        const priceSource = result.precioSource || "manual";
+        const priceUpdatedAt = parseDate(result.precioSourceUpdatedAt);
+        const priceAgeHours = Number.isFinite(priceUpdatedAt) ? (Date.now() - priceUpdatedAt) / (1000 * 60 * 60) : NaN;
+
+        if (result.ingresoNeto < 0) {
+            alerts.push({
+                tone: "danger",
+                icon: "⛔",
+                title: "Margen negativo",
+                text: "El escenario pierde plata. Conviene revisar precio, humedad o flete antes de avanzar."
+            });
+        } else if (result.margenPct < 5) {
+            alerts.push({
+                tone: "warning",
+                icon: "⚠️",
+                title: "Margen muy ajustado",
+                text: "El margen neto está por debajo del 5%. Hay poco colchón para absorber cambios."
+            });
+        } else if (result.margenPct < 12) {
+            alerts.push({
+                tone: "info",
+                icon: "ℹ️",
+                title: "Margen moderado",
+                text: "El resultado es positivo, pero todavía conviene comparar con otras alternativas."
+            });
+        }
+
+        if (Number.isFinite(humidityGap) && humidityGap > 4) {
+            alerts.push({
+                tone: "danger",
+                icon: "🌾",
+                title: "Humedad alta",
+                text: `${getCropLabel(result.cultivo)} está ${formatDecimal(humidityGap, 1)} puntos por encima de la base. La secada puede pesar bastante.`
+            });
+        } else if (Number.isFinite(humidityGap) && humidityGap > 2) {
+            alerts.push({
+                tone: "warning",
+                icon: "🌾",
+                title: "Secada a revisar",
+                text: `La humedad está ${formatDecimal(humidityGap, 1)} puntos arriba de la base. El castigo por secado ya empieza a notarse.`
+            });
+        }
+
+        if (Number.isFinite(result.windKmH)) {
+            if (result.windKmH > 35) {
+                alerts.push({
+                    tone: "danger",
+                    icon: "🌬️",
+                    title: "Viento fuerte",
+                    text: `Hay ${formatDecimal(result.windKmH, 1)} km/h de viento. Mejor revisar la ventana de trabajo y seguridad.`
+                });
+            } else if (result.windKmH > 25) {
+                alerts.push({
+                    tone: "warning",
+                    icon: "🌬️",
+                    title: "Viento moderado",
+                    text: `Con ${formatDecimal(result.windKmH, 1)} km/h conviene mirar la ventana operativa antes de entrar al lote.`
+                });
+            }
+        }
+
+        if (priceSource === "manual") {
+            alerts.push({
+                tone: "info",
+                icon: "💲",
+                title: "Precio manual",
+                text: "El precio fue cargado a mano. Si estás por vender, conviene compararlo con una referencia de mercado."
+            });
+        } else if (Number.isFinite(priceAgeHours) && priceAgeHours > 24) {
+            alerts.push({
+                tone: "warning",
+                icon: "💲",
+                title: "Precio desactualizado",
+                text: `La referencia de internet tiene ${formatDecimal(priceAgeHours, 1)} horas. Puede servir, pero revisala antes de decidir.`
+            });
+        }
+
+        if (!alerts.length) {
+            alerts.push({
+                tone: "success",
+                icon: "✅",
+                title: "Todo en rango",
+                text: "No aparecen alertas críticas. El escenario se ve ordenado para seguir analizando."
+            });
+        }
+
+        return alerts;
+    }
+
+    function renderAlerts(result) {
+        if (!elements.alertasLista || !elements.alertasConteo) {
+            return;
+        }
+
+        const alerts = buildAlerts(result);
+        const criticalCount = alerts.filter((alert) => alert.tone === "danger" || alert.tone === "warning").length;
+        const summaryLabel = criticalCount === 0
+            ? "Sin alertas críticas"
+            : criticalCount === 1
+                ? "1 alerta crítica"
+                : `${criticalCount} alertas críticas`;
+
+        elements.alertasConteo.textContent = summaryLabel;
+        elements.alertasConteo.className = `rounded-full border px-3 py-1 text-[11px] font-semibold ${alertToneBadgeClasses[criticalCount === 0 ? "success" : "warning"]}`;
+
+        elements.alertasLista.replaceChildren();
+
+        alerts.forEach((alert) => {
+            const card = document.createElement("article");
+            card.className = `rounded-2xl border px-4 py-4 text-sm shadow-sm ${alertToneClasses[alert.tone] ?? alertToneClasses.info}`;
+
+            const header = document.createElement("div");
+            header.className = "flex items-start gap-3";
+
+            const icon = document.createElement("div");
+            icon.className = "mt-0.5 text-base";
+            icon.textContent = alert.icon;
+
+            const content = document.createElement("div");
+            content.className = "min-w-0 flex-1";
+
+            const title = document.createElement("p");
+            title.className = "font-bold";
+            title.textContent = alert.title;
+
+            const text = document.createElement("p");
+            text.className = "mt-1 leading-6 text-slate-600";
+            text.textContent = alert.text;
+
+            content.append(title, text);
+            header.append(icon, content);
+            card.appendChild(header);
+            elements.alertasLista.appendChild(card);
+        });
     }
 
     function renderChart(bruto, gastos, neto) {

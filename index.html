@@ -288,6 +288,21 @@
                                 <p id="recomendacion" class="mt-2 text-base font-semibold text-slate-700">Esperando simulación...</p>
                             </div>
 
+                            <div class="sm:col-span-2 rounded-2xl border border-slate-200 bg-white/90 p-5">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🚨 Alertas de lote</h3>
+                                        <p class="mt-1 text-sm text-slate-500">Lo más importante para revisar antes de decidir.</p>
+                                    </div>
+                                    <span id="alertasConteo" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500">Sin cálculo</span>
+                                </div>
+                                <div id="alertasLista" class="mt-4 grid gap-3 sm:grid-cols-2">
+                                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-400">
+                                        Calculá un escenario para ver alertas automáticas.
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="sm:col-span-2 mt-2 h-72 rounded-2xl border border-slate-100 bg-white/90 p-4">
                                 <canvas id="graficoRentabilidad"></canvas>
                             </div>
