@@ -136,6 +136,51 @@
         });
     }
 
+    function installConnectivityBanner() {
+        if (window.__cosechaConnectivityBannerInstalled) {
+            return;
+        }
+
+        window.__cosechaConnectivityBannerInstalled = true;
+
+        const bannerId = "cosechaConnectivityBanner";
+
+        function ensureBanner() {
+            let banner = document.getElementById(bannerId);
+            if (banner) {
+                return banner;
+            }
+
+            banner = document.createElement("div");
+            banner.id = bannerId;
+            banner.className = "status-banner pointer-events-none fixed inset-x-3 top-3 z-[60] mx-auto hidden max-w-md rounded-2xl border px-4 py-3 text-sm font-medium shadow-lg shadow-slate-300/30";
+            banner.setAttribute("role", "status");
+            banner.setAttribute("aria-live", "polite");
+            document.body.appendChild(banner);
+            return banner;
+        }
+
+        function syncBanner() {
+            if (!document.body) {
+                return;
+            }
+
+            const banner = ensureBanner();
+            if (navigator.onLine) {
+                banner.classList.add("hidden");
+                return;
+            }
+
+            banner.dataset.tone = "warning";
+            banner.textContent = "Sin conexión. La app sigue mostrando lo que ya quedó cargado.";
+            banner.classList.remove("hidden");
+        }
+
+        document.addEventListener("DOMContentLoaded", syncBanner);
+        window.addEventListener("online", syncBanner);
+        window.addEventListener("offline", syncBanner);
+    }
+
     function registerServiceWorker() {
         if (!("serviceWorker" in navigator) || window.location.protocol === "file:") {
             return;
@@ -159,5 +204,6 @@
 
     requireAuth();
     installLogoutHandler();
+    installConnectivityBanner();
     registerServiceWorker();
 })();
