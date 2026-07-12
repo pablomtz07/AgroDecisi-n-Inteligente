@@ -41,6 +41,57 @@ const PRICE_SOURCES = {
     }
 };
 
+const EXAMPLE_SCENARIOS = {
+    soja: {
+        lote: "Lote ejemplo soja",
+        precio: 325000,
+        humedadActual: 14.2,
+        hectareas: 52,
+        rendimiento: 3.4,
+        costoSecada: 640,
+        tarifaFlete: 11.8,
+        distanciaFlete: 78,
+        latitud: -35.9,
+        longitud: -61.2
+    },
+    maiz: {
+        lote: "Lote ejemplo maiz",
+        precio: 245000,
+        humedadActual: 15.8,
+        hectareas: 44,
+        rendimiento: 8.7,
+        costoSecada: 520,
+        tarifaFlete: 12.4,
+        distanciaFlete: 85,
+        latitud: -38.03,
+        longitud: -60.1
+    },
+    trigo: {
+        lote: "Lote ejemplo trigo",
+        precio: 215000,
+        humedadActual: 13.8,
+        hectareas: 31,
+        rendimiento: 4.6,
+        costoSecada: 480,
+        tarifaFlete: 10.2,
+        distanciaFlete: 60,
+        latitud: -36.6,
+        longitud: -59.4
+    },
+    girasol: {
+        lote: "Lote ejemplo girasol",
+        precio: 360000,
+        humedadActual: 11.8,
+        hectareas: 28,
+        rendimiento: 2.7,
+        costoSecada: 700,
+        tarifaFlete: 14,
+        distanciaFlete: 90,
+        latitud: -37.2,
+        longitud: -61.0
+    }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     const $ = (id) => document.getElementById(id);
 
@@ -64,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCargarUbicacion: $("btnCargarUbicacion"),
         btnCalcular: $("btnCalcular"),
         btnGuardar: $("btnGuardar"),
+        btnCargarEjemplo: $("btnCargarEjemplo"),
         btnUsarUbicacion: $("btnUsarUbicacion"),
         btnBorrarHistorial: $("btnBorrarHistorial"),
         btnExportarHistorial: $("btnExportarHistorial"),
@@ -224,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.cultivo.addEventListener("change", handleCropChange);
         elements.btnCalcular.addEventListener("click", () => runSimulation(false));
         elements.btnGuardar.addEventListener("click", () => runSimulation(true));
+        elements.btnCargarEjemplo?.addEventListener("click", loadExampleScenario);
         elements.btnCargarPrecio?.addEventListener("click", () => loadInternetPriceReference({ force: true }));
         elements.btnUsarHumedadClima?.addEventListener("click", () => {
             syncHumidityFromClimate({ force: true });
@@ -353,6 +406,62 @@ document.addEventListener("DOMContentLoaded", () => {
                 elements.precioFuente.textContent = elements.precio.value ? "Referencia: precio cargado manualmente" : "Referencia: sin cargar";
             }
         }
+    }
+
+    function loadExampleScenario() {
+        if (!elements.cultivo) {
+            return;
+        }
+
+        const cropKey = elements.cultivo.value;
+        const example = EXAMPLE_SCENARIOS[cropKey] || EXAMPLE_SCENARIOS.maiz;
+
+        if (elements.lote) {
+            elements.lote.value = example.lote;
+        }
+
+        if (elements.precio) {
+            elements.precio.value = String(example.precio);
+            markPriceAsManual();
+        }
+
+        if (elements.humedadActual) {
+            elements.humedadActual.value = example.humedadActual.toFixed(1);
+            markHumidityAsManual();
+        }
+
+        if (elements.hectareas) {
+            elements.hectareas.value = String(example.hectareas);
+            markHectareasAsManual();
+        }
+
+        if (elements.rendimiento) {
+            elements.rendimiento.value = String(example.rendimiento);
+        }
+
+        if (elements.costoSecada) {
+            elements.costoSecada.value = String(example.costoSecada);
+        }
+
+        if (elements.tarifaFlete) {
+            elements.tarifaFlete.value = String(example.tarifaFlete);
+        }
+
+        if (elements.distanciaFlete) {
+            elements.distanciaFlete.value = String(example.distanciaFlete);
+        }
+
+        if (elements.latitud) {
+            elements.latitud.value = example.latitud.toFixed(4);
+        }
+
+        if (elements.longitud) {
+            elements.longitud.value = example.longitud.toFixed(4);
+        }
+
+        syncHumidityBase(cropKey);
+        saveFormState();
+        showStatus("Ejemplo cargado. Ya podés tocar Calcular y ver el resultado.", "success");
     }
 
     function handleNavigationClick(event) {
