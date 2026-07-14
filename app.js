@@ -1,4 +1,4 @@
-const STORAGE_KEYS = {
+﻿const STORAGE_KEYS = {
     history: "agroHistorial",
     form: "agroFormulario",
     pendingScenario: "agroPendingScenario",
@@ -611,7 +611,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleConfirmLocation() {
         if (!hasValidCoordinates()) {
-            showStatus("ElegÃ­ una ubicaciÃ³n vÃ¡lida antes de cargarla al dashboard.", "warning");
+            showStatus("Elegí una ubicación válida antes de cargarla al dashboard.", "warning");
             return;
         }
 
