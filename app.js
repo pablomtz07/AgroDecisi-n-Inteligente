@@ -2481,7 +2481,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
         const emptyCells = Array.from({ length: startOffset }, () => `
-            <div class="h-24 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70"></div>
+            <div class="h-20 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70"></div>
         `);
 
         const dayCells = [];
@@ -2489,19 +2489,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const date = new Date(baseDate.getFullYear(), baseDate.getMonth(), day);
             const key = toDateKey(date);
             const record = lookup.get(key);
-            const weather = record ? getWeatherMeta(record.weatherCode) : { icon: "—", label: "Sin dato" };
+            const weather = record ? getWeatherMeta(record.weatherCode) : { icon: "-", label: "Sin dato" };
             const rain = record?.rain;
+            const hasRain = Number.isFinite(rain);
             dayCells.push(`
-                <div class="calendar-day-card min-h-24 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm ${day === baseDate.getDate() ? "ring-2 ring-green-600/20" : ""}">
+                <div class="calendar-day-card min-h-20 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm ${day === baseDate.getDate() ? "ring-2 ring-green-600/20" : ""}">
                     <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${day}</p>
-                            <p class="mt-1 text-sm font-semibold text-slate-800">${weather.label}</p>
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Dia ${day}</p>
+                            <p class="mt-1 truncate text-xs font-semibold text-slate-800 sm:text-sm">${weather.label}</p>
                         </div>
-                        <span class="text-lg">${weather.icon}</span>
+                        <span class="shrink-0 text-base leading-none sm:text-lg">${weather.icon}</span>
                     </div>
-                    <p class="mt-3 text-[11px] text-slate-500">${record ? `${formatDecimal(record.max, 1)}° / ${formatDecimal(record.min, 1)}°` : "Sin pronóstico"}</p>
-                    <p class="mt-1 text-[11px] font-semibold ${Number.isFinite(rain) && rain >= 60 ? "text-blue-600" : "text-slate-400"}">${Number.isFinite(rain) ? `Lluvia ${formatDecimal(rain, 0)}%` : ""}</p>
+                    <div class="mt-2 flex items-end justify-between gap-2 sm:mt-3">
+                        <p class="text-[10px] text-slate-500 sm:text-[11px]">${record ? `${formatDecimal(record.max, 1)} C / ${formatDecimal(record.min, 1)} C` : "Sin pronostico"}</p>
+                        <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold sm:text-[10px] ${hasRain && rain >= 60 ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-slate-50 text-slate-400"}">${hasRain ? `${formatDecimal(rain, 0)}% lluvia` : "-"}</span>
+                    </div>
                 </div>
             `);
         }
@@ -2510,46 +2513,15 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="pb-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">${label}</div>
         `).join("");
 
-        const mobileCards = [];
-        for (let day = 1; day <= daysInMonth; day += 1) {
-            const date = new Date(baseDate.getFullYear(), baseDate.getMonth(), day);
-            const key = toDateKey(date);
-            const record = lookup.get(key);
-            const weather = record ? getWeatherMeta(record.weatherCode) : { icon: "—", label: "Sin dato" };
-            const rain = record?.rain;
-            mobileCards.push(`
-                <article class="calendar-day-card rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${day === baseDate.getDate() ? "ring-2 ring-green-600/20" : ""}">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Día ${day}</p>
-                            <p class="mt-1 text-base font-bold text-slate-900">${weather.label}</p>
-                        </div>
-                        <span class="text-2xl leading-none" aria-hidden="true">${weather.icon}</span>
-                    </div>
-                    <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
-                        <div class="rounded-xl bg-slate-50 px-3 py-2">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máx / Mín</p>
-                            <p class="mt-1 font-semibold text-slate-800">${record ? `${formatDecimal(record.max, 1)}° / ${formatDecimal(record.min, 1)}°` : "Sin pronóstico"}</p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 px-3 py-2">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lluvia</p>
-                            <p class="mt-1 font-semibold ${Number.isFinite(rain) && rain >= 60 ? "text-blue-600" : "text-slate-700"}">${Number.isFinite(rain) ? `${formatDecimal(rain, 0)}%` : "—"}</p>
-                        </div>
-                    </div>
-                </article>
-            `);
-        }
-
         return `
-            <div class="hidden sm:block">
-                <div class="grid grid-cols-7 gap-2">${headers}</div>
-                <div class="mt-2 grid grid-cols-7 gap-2">
-                    ${emptyCells.join("")}
-                    ${dayCells.join("")}
+            <div class="calendar-month-scroll -mx-1 overflow-x-auto pb-1">
+                <div class="calendar-month-grid min-w-[560px] px-1 sm:min-w-0">
+                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2">${headers}</div>
+                    <div class="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+                        ${emptyCells.join("")}
+                        ${dayCells.join("")}
+                    </div>
                 </div>
-            </div>
-            <div class="grid gap-3 sm:hidden">
-                ${mobileCards.join("")}
             </div>
         `;
     }
@@ -2867,3 +2839,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+
