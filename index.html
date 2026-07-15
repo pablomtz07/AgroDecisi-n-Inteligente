@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#166534">
     <title>AgroDecisión Inteligente | Cosecha</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="auth.js?v=20260714-1"></script>
+    <script src="auth.js?v=20260714-3"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -44,10 +44,14 @@
             <div>
                 <h2 class="mb-6 text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Navegación</h2>
                 <nav class="space-y-2">
-                    <button type="button" id="btnMenuDashboard" data-scroll-to="dashboard-section" data-active="true" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-green-700 transition-all">
+                    <button type="button" id="btnMenuDashboard" data-scroll-to="form-section" data-active="true" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-green-700 transition-all">
+                        <span aria-hidden="true">🧾</span>
+                        Carga de datos
+                    </button>
+                    <a href="dashboard.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
                         <span aria-hidden="true">📊</span>
                         Dashboard
-                    </button>
+                    </a>
                     <a href="clima.html" id="btnMenuClima" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
                         <span aria-hidden="true">🌦️</span>
                         Clima Avanzado
@@ -74,10 +78,14 @@
         <main class="min-w-0 flex-1 space-y-5">
             <nav class="fixed inset-x-3 bottom-3 z-50 rounded-[1.6rem] border border-slate-200/70 bg-white/95 p-2 shadow-2xl shadow-slate-300/40 backdrop-blur md:hidden" aria-label="Navegación móvil">
                 <div class="grid grid-cols-4 gap-2">
-                    <button type="button" data-scroll-to="dashboard-section" data-active="true" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-green-700">
-                        <span class="text-base" aria-hidden="true">📊</span>
-                        Inicio
+                    <button type="button" data-scroll-to="form-section" data-active="true" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-green-700">
+                        <span class="text-base" aria-hidden="true">🧾</span>
+                        Datos
                     </button>
+                    <a href="dashboard.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
+                        <span class="text-base" aria-hidden="true">📊</span>
+                        Dashboard
+                    </a>
                     <a href="clima.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
                         <span class="text-base" aria-hidden="true">🌦️</span>
                         Clima
@@ -95,7 +103,7 @@
 
             <div id="formStatus" class="hidden rounded-[1.5rem] border px-4 py-3 text-sm font-medium shadow-sm" role="status" aria-live="polite"></div>
 
-            <section id="dashboard-section" class="grid items-start gap-6 lg:grid-cols-12">
+            <section id="form-section" class="grid items-start gap-6 lg:grid-cols-12">
                 <section class="premium-card space-y-5 rounded-[2rem] p-6 lg:col-span-5">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900">Configuración del Lote</h2>
@@ -231,7 +239,7 @@
                     </form>
                 </section>
 
-                <section class="space-y-6 lg:col-span-7">
+                <section class="hidden space-y-6 lg:col-span-7">
                     <div class="premium-card rounded-[2rem] p-5 sm:p-6">
                         <div class="mb-6">
                             <h2 class="text-xl font-bold text-slate-900">Dashboard de Resultados</h2>
@@ -314,9 +322,25 @@
                         </div>
                     </div>
                 </section>
+
+                <section class="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm lg:col-span-7">
+                    <p class="text-xs font-bold uppercase tracking-[0.25em] text-emerald-600">Dashboard</p>
+                    <h3 class="mt-2 text-xl font-bold text-slate-900">Los resultados ahora se ven en otra pantalla</h3>
+                    <p class="mt-2 max-w-2xl text-sm text-slate-600">
+                        Cargá el lote, la humedad, el precio y el flete en este formulario. Cuando toques calcular, te llevamos al dashboard para ver margen, clima, alertas y calendario.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <a href="dashboard.html" class="rounded-xl bg-gradient-to-r from-green-700 to-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-700/20 transition-all hover:from-green-800 hover:to-emerald-700">
+                            Abrir dashboard
+                        </a>
+                        <a href="history.html" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100">
+                            Ver historial
+                        </a>
+                    </div>
+                </section>
             </section>
 
-            <section class="md:hidden rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur">
+            <section class="hidden md:hidden rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Más opciones</p>
@@ -336,7 +360,7 @@
                 </div>
             </section>
 
-            <section id="clima-section" class="premium-card hidden rounded-[2rem] p-6 md:block">
+            <section id="clima-section" class="hidden premium-card rounded-[2rem] p-6 md:block">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
@@ -368,6 +392,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="app.js?v=20260714-2"></script>
+    <script src="app.js?v=20260714-3"></script>
 </body>
 </html>

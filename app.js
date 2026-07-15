@@ -1,9 +1,9 @@
 ﻿const STORAGE_KEYS = {
     history: "agroHistorial",
     form: "agroFormulario",
-    pendingScenario: "agroPendingScenario",
     priceCache: "agroPrecioInternet",
-    parcel: "agroParcela"
+    parcel: "agroParcela",
+    lastResult: "agroUltimoResultado"
 };
 
 const CROPS = {
@@ -149,6 +149,10 @@ document.addEventListener("DOMContentLoaded", () => {
         alertasLista: $("alertasLista"),
         alertasConteo: $("alertasConteo"),
         graficoRentabilidad: $("graficoRentabilidad"),
+        dashboardPage: $("dashboardPage"),
+        dashboardScenarioName: $("dashboardScenarioName"),
+        dashboardUpdatedAt: $("dashboardUpdatedAt"),
+        dashboardEmptyState: $("dashboardEmptyState"),
         clima: $("clima"),
         climaUbicacion: $("climaUbicacion"),
         climaPanel: $("climaPanel"),
@@ -178,12 +182,13 @@ document.addEventListener("DOMContentLoaded", () => {
         navButtons: document.querySelectorAll("[data-scroll-to]")
     };
 
-    const isDashboardPage = Boolean(elements.cultivo);
+    const isEntryPage = Boolean(elements.cultivo);
     const isHistoryPage = Boolean(elements.tablaHistorial);
-    const isMapPage = Boolean(elements.mapaLote) && !isDashboardPage && !isHistoryPage;
-    const isClimatePage = Boolean(elements.climaPanel) && !isDashboardPage && !isHistoryPage && !isMapPage;
+    const isMapPage = Boolean(elements.mapaLote) && !isEntryPage && !isHistoryPage;
+    const isResultsPage = Boolean(elements.dashboardPage) && !isEntryPage && !isHistoryPage && !isMapPage;
+    const isClimatePage = Boolean(elements.climaPanel) && !isEntryPage && !isHistoryPage && !isMapPage && !isResultsPage;
 
-    if (!isDashboardPage && !isHistoryPage && !isMapPage && !isClimatePage) {
+    if (!isEntryPage && !isResultsPage && !isHistoryPage && !isMapPage && !isClimatePage) {
         return;
     }
 
@@ -239,8 +244,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let statusTimeoutId = null;
 
-    if (isDashboardPage) {
-        initDashboardPage();
+    if (isEntryPage) {
+        initEntryPage();
+    }
+
+    if (isResultsPage) {
+        initResultsPage();
     }
 
     if (isHistoryPage) {
@@ -255,8 +264,8 @@ document.addEventListener("DOMContentLoaded", () => {
         initClimatePage();
     }
 
-    function initDashboardPage() {
-        bindDashboardEvents();
+    function initEntryPage() {
+        bindEntryEvents();
         const savedForm = restoreFormState();
         restoreParcelState(savedForm);
         syncHumidityBase(elements.cultivo.value);
@@ -265,15 +274,32 @@ document.addEventListener("DOMContentLoaded", () => {
         updateClimateLocationLabel();
         initializeMap();
 
-        if (!applyPendingScenario()) {
-            fetchClimate(null, { includeDaily: true });
-        }
+        fetchClimate(null, { includeDaily: true });
 
         if (shouldAutoLoadPrice()) {
             loadInternetPriceReference({ silent: true });
         }
 
-        setActiveNav("dashboard-section");
+        setActiveNav("form-section");
+    }
+
+    function initResultsPage() {
+        bindResultsEvents();
+        const lastResult = readLastScenario();
+
+        if (lastResult) {
+            renderResults(lastResult);
+            if (hasValidCoordinates(lastResult.latitud, lastResult.longitud)) {
+                fetchClimate({ latitud: lastResult.latitud, longitud: lastResult.longitud }, { includeDaily: true });
+            } else {
+                fetchClimate(null, { includeDaily: true });
+            }
+        } else {
+            resetResultsPanel("Cargá un escenario en Datos para ver resultados y predicción.");
+            fetchClimate(null, { includeDaily: true });
+        }
+
+        setActiveNav("resumen-section");
     }
 
     function initHistoryPage() {
@@ -300,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchClimate(null, { includeDaily: true });
     }
 
-    function bindDashboardEvents() {
+    function bindEntryEvents() {
         elements.cultivo.addEventListener("change", handleCropChange);
         elements.btnCalcular.addEventListener("click", () => runSimulation(false));
         elements.btnGuardar.addEventListener("click", () => runSimulation(true));
@@ -348,6 +374,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             });
+        });
+    }
+
+    function bindResultsEvents() {
+        elements.btnActualizarClima?.addEventListener("click", () => {
+            const lastResult = readLastScenario();
+            if (lastResult && hasValidCoordinates(lastResult.latitud, lastResult.longitud)) {
+                fetchClimate({ latitud: lastResult.latitud, longitud: lastResult.longitud }, { includeDaily: true, forceRender: true });
+                return;
+            }
+
+            fetchClimate(null, { includeDaily: true, forceRender: true });
+        });
+
+        elements.navButtons.forEach((button) => {
+            button.addEventListener("click", handleNavigationClick);
         });
     }
 
@@ -628,7 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         saveFormState();
-        window.location.href = "index.html#dashboard-section";
+        window.location.href = "dashboard.html";
     }
 
     function handleMapConfirmLocation() {
@@ -649,7 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state.parcelDrawing = false;
         persistParcelState();
         saveFormState();
-        window.location.href = "index.html#dashboard-section";
+        window.location.href = "dashboard.html";
     }
 
     function startParcelDrawing() {
@@ -1479,13 +1521,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const result = calculateScenario(form);
         renderResults(result);
+        writeJson(STORAGE_KEYS.lastResult, result);
 
         if (saveToHistory) {
             persistScenario(result);
-            showStatus("Escenario guardado en el historial.", "success");
-        } else {
-            showStatus("Simulación actualizada.", "info");
         }
+
+        if (isEntryPage) {
+            showStatus("Escenario listo. Abriendo el dashboard de resultados...", "success");
+            window.setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 140);
+            return result;
+        }
+
+        showStatus(saveToHistory ? "Escenario guardado en el historial." : "Simulación actualizada.", "success");
 
         return result;
     }
@@ -1725,18 +1775,81 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderResults(result) {
         state.lastResult = result;
-        elements.produccion.textContent = `${formatDecimal(result.produccion, 2)} tn`;
-        elements.ingreso.textContent = formatCurrency(result.ingresoBruto);
-        elements.costos.textContent = formatCurrency(result.gastosTotales);
-        elements.resultado.textContent = formatCurrency(result.ingresoNeto);
-        elements.resultado.className = `mt-1 text-2xl font-extrabold ${result.ingresoNeto >= 0 ? "text-emerald-700" : "text-red-600"}`;
+        writeJson(STORAGE_KEYS.lastResult, result);
 
-        elements.recomendacion.textContent = result.recommendationText;
-        elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
+        if (elements.dashboardScenarioName) {
+            elements.dashboardScenarioName.textContent = `${result.lote ?? "Lote sin nombre"} · ${getCropLabel(result.cultivo)}`;
+        }
+
+        if (elements.dashboardUpdatedAt) {
+            elements.dashboardUpdatedAt.textContent = `Última simulación: ${formatDateTime(result.createdAt)}`;
+        }
+
+        if (elements.dashboardEmptyState) {
+            elements.dashboardEmptyState.classList.add("hidden");
+        }
+
+        if (elements.produccion) {
+            elements.produccion.textContent = `${formatDecimal(result.produccion, 2)} tn`;
+        }
+        if (elements.ingreso) {
+            elements.ingreso.textContent = formatCurrency(result.ingresoBruto);
+        }
+        if (elements.costos) {
+            elements.costos.textContent = formatCurrency(result.gastosTotales);
+        }
+        if (elements.resultado) {
+            elements.resultado.textContent = formatCurrency(result.ingresoNeto);
+            elements.resultado.className = `mt-1 text-2xl font-extrabold ${result.ingresoNeto >= 0 ? "text-emerald-700" : "text-red-600"}`;
+        }
+
+        if (elements.recomendacion) {
+            elements.recomendacion.textContent = result.recommendationText;
+            elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
+        }
 
         renderTemporalAnalysis(result);
         renderAlerts(result);
         renderChart(result.ingresoBruto, result.gastosTotales, result.ingresoNeto);
+    }
+
+    function resetResultsPanel(message) {
+        const fallback = message || "Cargá un escenario en Datos para ver resultados.";
+
+        if (elements.dashboardScenarioName) {
+            elements.dashboardScenarioName.textContent = "Sin escenario cargado";
+        }
+
+        if (elements.dashboardUpdatedAt) {
+            elements.dashboardUpdatedAt.textContent = fallback;
+        }
+
+        if (elements.dashboardEmptyState) {
+            elements.dashboardEmptyState.classList.remove("hidden");
+            elements.dashboardEmptyState.textContent = fallback;
+        }
+
+        if (elements.produccion) {
+            elements.produccion.textContent = "---";
+        }
+        if (elements.ingreso) {
+            elements.ingreso.textContent = "---";
+        }
+        if (elements.costos) {
+            elements.costos.textContent = "---";
+        }
+        if (elements.resultado) {
+            elements.resultado.textContent = "---";
+            elements.resultado.className = "mt-1 text-2xl font-extrabold text-slate-400";
+        }
+        if (elements.recomendacion) {
+            elements.recomendacion.textContent = fallback;
+            elements.recomendacion.className = "mt-2 text-base font-semibold text-slate-500";
+        }
+
+        resetTemporalPanel(fallback);
+        resetAlertsPanel(fallback);
+        clearChart();
     }
 
     function buildAlerts(result) {
@@ -1880,6 +1993,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function resetAlertsPanel(message) {
+        if (elements.alertasConteo) {
+            elements.alertasConteo.textContent = "Sin cálculo";
+            elements.alertasConteo.className = "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500";
+        }
+
+        if (elements.alertasLista) {
+            elements.alertasLista.replaceChildren();
+            const empty = document.createElement("div");
+            empty.className = "rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-400";
+            empty.textContent = message || "Calculá un escenario para ver alertas automáticas.";
+            elements.alertasLista.appendChild(empty);
+        }
+    }
+
     function renderChart(bruto, gastos, neto) {
         if (!elements.graficoRentabilidad) {
             return;
@@ -1931,6 +2059,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         });
+    }
+
+    function clearChart() {
+        if (state.chart) {
+            state.chart.destroy();
+            state.chart = null;
+        }
+
+        if (!elements.graficoRentabilidad) {
+            return;
+        }
+
+        const context = elements.graficoRentabilidad.getContext("2d");
+        if (!context) {
+            return;
+        }
+
+        context.clearRect(0, 0, elements.graficoRentabilidad.width, elements.graficoRentabilidad.height);
     }
 
     function renderTemporalAnalysis(result) {
@@ -2314,6 +2460,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const history = readHistory();
         history.push(result);
         writeHistory(history);
+        writeJson(STORAGE_KEYS.lastResult, result);
         renderHistory();
     }
 
@@ -2441,64 +2588,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function loadHistoryItem(entry) {
-        if (!isDashboardPage) {
-            writeJson(STORAGE_KEYS.pendingScenario, { id: entry.id });
-            window.location.href = "index.html";
+        writeJson(STORAGE_KEYS.lastResult, entry);
+
+        if (!isResultsPage) {
+            window.location.href = "dashboard.html";
             return;
         }
 
-        if (elements.lote) {
-            elements.lote.value = entry.lote ?? "";
-        }
-
-        if (elements.cultivo) {
-            elements.cultivo.value = entry.cultivo ?? "maiz";
-        }
-
-        syncHumidityBase(elements.cultivo.value);
-
-        if (elements.precio) elements.precio.value = entry.precio ?? "";
-        if (elements.costoSecada) elements.costoSecada.value = entry.costoSecada ?? "";
-        if (elements.humedadActual) {
-            elements.humedadActual.value = entry.humedadActual ?? "";
-            setHumiditySource("manual");
-        }
-        if (elements.hectareas) elements.hectareas.value = entry.hectareas ?? "";
-        setHectareasSource("manual");
-        if (elements.rendimiento) elements.rendimiento.value = entry.rendimiento ?? "";
-        if (elements.tarifaFlete) elements.tarifaFlete.value = entry.tarifaFlete ?? "";
-        if (elements.distanciaFlete) elements.distanciaFlete.value = entry.distanciaFlete ?? "";
-        if (elements.latitud && Number.isFinite(entry.latitud)) elements.latitud.value = entry.latitud;
-        if (elements.longitud && Number.isFinite(entry.longitud)) elements.longitud.value = entry.longitud;
-
-        restorePriceReferenceState(entry);
-
-        saveFormState();
         renderResults(entry);
         updateClimateLocationLabel(entry.latitud, entry.longitud);
         if (hasValidCoordinates(entry.latitud, entry.longitud)) {
             fetchClimate({ latitud: entry.latitud, longitud: entry.longitud }, { includeDaily: true });
         }
-        setActiveNav("dashboard-section");
-        document.getElementById("dashboard-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        showStatus(`Escenario de ${entry.lote ?? "Lote sin nombre"} cargado en el formulario.`, "success");
-    }
-
-    function applyPendingScenario() {
-        const pending = readJson(STORAGE_KEYS.pendingScenario, null);
-        if (!pending || typeof pending.id !== "number") {
-            return false;
-        }
-
-        const historyItem = readHistory().find((item) => item.id === pending.id);
-        writeJson(STORAGE_KEYS.pendingScenario, null);
-
-        if (!historyItem) {
-            return false;
-        }
-
-        loadHistoryItem(historyItem);
-        return true;
+        setActiveNav("resumen-section");
+        document.getElementById("resumen-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        showStatus(`Escenario de ${entry.lote ?? "Lote sin nombre"} cargado en el dashboard.`, "success");
     }
 
     function deleteHistoryItem(id) {
@@ -2598,7 +2702,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const renderClimatePage = Boolean(elements.climaPanel);
 
         updateClimateLocationLabel(coordinates.latitud, coordinates.longitud);
-        if (isDashboardPage || isClimatePage) {
+        if (isEntryPage || isClimatePage) {
             updateMapLocation(coordinates.latitud, coordinates.longitud, { recenter: false });
         }
 
@@ -2708,7 +2812,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm ring-2 ring-green-600/20">
                     <p class="text-xs font-bold uppercase tracking-wider text-slate-400">💧 Humedad Ambiente</p>
                     <p class="mt-1 text-xl font-extrabold text-green-700">${formatDecimal(current.humidity, 1)}%</p>
-                    <span class="mt-0.5 block text-[10px] font-medium text-green-600">Sincronizado con el formulario</span>
+                    <span class="mt-0.5 block text-[10px] font-medium text-green-600">Lectura del escenario actual</span>
                 </div>
                 <div class="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
                     <p class="text-xs font-bold uppercase tracking-wider text-slate-400">💨 Velocidad Viento</p>
@@ -3041,6 +3145,16 @@ document.addEventListener("DOMContentLoaded", () => {
     function readHistory() {
         const history = readJson(STORAGE_KEYS.history, []);
         return Array.isArray(history) ? history : [];
+    }
+
+    function readLastScenario() {
+        const lastResult = readJson(STORAGE_KEYS.lastResult, null);
+        if (lastResult && typeof lastResult === "object") {
+            return lastResult;
+        }
+
+        const history = readHistory();
+        return history.length > 0 ? history[history.length - 1] : null;
     }
 
     function getClimateCoordinates(overrideCoordinates = null) {

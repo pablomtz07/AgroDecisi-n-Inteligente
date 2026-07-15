@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#166534">
+    <title>Dashboard | AgroDecisión Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="auth.js?v=20260714-3"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="mobile-safe min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.08),_transparent_26%),linear-gradient(180deg,#f8fafc_0%,#eef6ff_100%)] text-slate-800 antialiased">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-emerald-950 via-green-900 to-lime-800 text-white shadow-2xl shadow-emerald-950/20">
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 lg:px-8">
+            <div class="space-y-1">
+                <h1 class="flex items-center gap-2 text-xl font-extrabold tracking-tight sm:text-3xl">
+                    <span aria-hidden="true">📊</span>
+                    Dashboard
+                </h1>
+                <p class="hidden text-sm text-emerald-100 sm:block sm:text-base">
+                    Resultados del lote, clima, alertas y calendario de cosecha en una sola vista.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button type="button" data-scroll-to="resumen-section" data-active="true" class="nav-button rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Resumen
+                </button>
+                <button type="button" data-scroll-to="climaPanel" class="nav-button rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Clima
+                </button>
+                <a href="index.html" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Datos
+                </a>
+                <a href="mapa.html" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Mapa
+                </a>
+                <a href="history.html" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Historial
+                </a>
+                <button type="button" data-logout class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur transition-colors hover:bg-white/15">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="dashboardPage" class="mx-auto max-w-7xl px-4 py-6 pb-40 sm:px-6 md:pb-8 lg:px-8">
+        <div id="formStatus" class="hidden mb-6 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm" role="status" aria-live="polite"></div>
+
+        <section id="resumen-section" class="rounded-[2.25rem] border border-emerald-200 bg-gradient-to-br from-emerald-950 via-green-900 to-lime-800 p-6 text-white shadow-2xl shadow-emerald-950/20 sm:p-8">
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div class="max-w-3xl">
+                    <p class="text-xs font-bold uppercase tracking-[0.35em] text-emerald-200">Dashboard de resultados</p>
+                    <h2 class="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Una vista clara para decidir cuándo cosechar</h2>
+                    <p id="dashboardScenarioName" class="mt-4 text-base font-semibold text-emerald-50">Sin escenario cargado</p>
+                    <p id="dashboardUpdatedAt" class="mt-1 text-sm text-emerald-100">Cargá un escenario en Datos para ver el último resultado.</p>
+                </div>
+
+                <div id="dashboardEmptyState" class="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm leading-6 text-emerald-50 backdrop-blur">
+                    Acá vas a ver el margen, la recomendación, el clima y el calendario de cosecha apenas cargues un escenario.
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-100">Lectura</p>
+                    <p class="mt-1 text-xl font-extrabold">Operativa</p>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-100">Vista</p>
+                    <p class="mt-1 text-xl font-extrabold">Solo resultados</p>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-100">Objetivo</p>
+                    <p class="mt-1 text-xl font-extrabold">Decidir mejor</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-emerald-600 bg-white/92 p-4 shadow-sm backdrop-blur">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🌾 Producción Total</h3>
+                <p id="produccion" class="mt-1 text-2xl font-extrabold text-slate-800">---</p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-green-600 bg-white/92 p-4 shadow-sm backdrop-blur">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">💰 Ingreso Bruto</h3>
+                <p id="ingreso" class="mt-1 text-2xl font-extrabold text-slate-800">---</p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-orange-500 bg-white/92 p-4 shadow-sm backdrop-blur">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🔥 Gastos (Secada + Flete)</h3>
+                <p id="costos" class="mt-1 text-2xl font-extrabold text-slate-800">---</p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 border-l-4 border-l-blue-600 bg-white/92 p-4 shadow-sm backdrop-blur">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">📈 Margen Neto Parcial</h3>
+                <p id="resultado" class="mt-1 text-2xl font-extrabold text-blue-600">---</p>
+            </div>
+        </section>
+
+        <section class="mt-6 grid gap-6 xl:grid-cols-12">
+            <div class="space-y-6 xl:col-span-7">
+                <div class="rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur sm:p-6">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🤖 Asistente Agronómico Activo</h3>
+                    <p id="recomendacion" class="mt-2 text-base font-semibold text-slate-700">Esperando simulación...</p>
+                </div>
+
+                <div id="temporalPanel" class="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 sm:p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-600">Análisis temporal</h3>
+                            <p id="temporalResumen" class="mt-1 text-sm text-slate-600">Calculá un escenario para comparar hoy con los próximos días.</p>
+                        </div>
+                        <span id="temporalEstado" class="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700">Sin análisis</span>
+                    </div>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mejor día</p>
+                            <p id="temporalMejorDia" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
+                            <p id="temporalMejorDetalle" class="mt-1 text-xs text-slate-500">Esperando datos.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Diferencia vs hoy</p>
+                            <p id="temporalDiferencia" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
+                            <p id="temporalDiferenciaDetalle" class="mt-1 text-xs text-slate-500">Sin comparación disponible.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Humedad estimada</p>
+                            <p id="temporalHumedad" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
+                            <p id="temporalHumedadDetalle" class="mt-1 text-xs text-slate-500">Sin cálculo aún.</p>
+                        </div>
+                    </div>
+                    <div id="temporalLista" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-400">
+                            Calculá un escenario para ver la comparación por día.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur sm:p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🚨 Alertas de lote</h3>
+                            <p class="mt-1 text-sm text-slate-500">Lo más importante para revisar antes de decidir.</p>
+                        </div>
+                        <span id="alertasConteo" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500">Sin cálculo</span>
+                    </div>
+                    <div id="alertasLista" class="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-400">
+                            Calculá un escenario para ver alertas automáticas.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6 xl:col-span-5">
+                <div class="rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur sm:p-6">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Gráfico</p>
+                            <h3 class="mt-1 text-xl font-bold text-slate-900">Rentabilidad del escenario</h3>
+                        </div>
+                        <a href="index.html" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-100">
+                            Cargar datos
+                        </a>
+                    </div>
+                    <div class="mt-4 h-72 rounded-2xl border border-slate-100 bg-white p-4">
+                        <canvas id="graficoRentabilidad"></canvas>
+                    </div>
+                </div>
+
+                <section class="rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur sm:p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
+                                <span aria-hidden="true">🌦️</span>
+                                Monitoreo climático
+                            </h2>
+                            <p id="climaUbicacion" class="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ubicación: --</p>
+                        </div>
+                        <button id="btnActualizarClima" type="button" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100">
+                            Actualizar clima
+                        </button>
+                    </div>
+                    <div id="clima" class="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+                        <span class="animate-pulse text-slate-400">Conectando con estación meteorológica...</span>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <section id="climaPanel" class="mt-6 rounded-[2rem] border border-slate-200 bg-white/92 p-5 shadow-sm backdrop-blur sm:p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Clima detallado</p>
+                    <h2 class="mt-1 text-xl font-bold text-slate-900">Pronóstico semanal y calendario mensual</h2>
+                    <p id="climaSubtitulo" class="mt-2 max-w-2xl text-sm text-slate-500">
+                        Elegí una ubicación para ver cómo cambia el clima durante la semana y el mes.
+                    </p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-right">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Estado actual</p>
+                    <p id="climaLluviaActual" class="mt-1 text-2xl font-extrabold text-emerald-700">--</p>
+                    <p class="text-xs text-emerald-600">Probabilidad de lluvia hoy</p>
+                </div>
+            </div>
+
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-2xl border border-slate-100 bg-gradient-to-br from-orange-50 to-emerald-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Resumen</p>
+                    <p id="climaResumenActual" class="mt-2 text-3xl font-extrabold text-slate-900">--</p>
+                    <p id="climaResumenDetalle" class="mt-1 text-sm font-medium text-slate-600">Cargando pronóstico...</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Lectura</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-800">Clima operativo del lote</p>
+                    <p class="mt-1 text-sm text-slate-500">Útil para decidir si conviene entrar, esperar o pausar la jornada.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Temperatura</p>
+                    <p id="climaTempActual" class="mt-2 text-2xl font-extrabold text-slate-900">--</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Humedad</p>
+                    <p id="climaHumActual" class="mt-2 text-2xl font-extrabold text-emerald-700">--</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Viento</p>
+                    <p id="climaVientoActual" class="mt-2 text-2xl font-extrabold text-slate-900">--</p>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Lectura</p>
+                    <p class="mt-2 text-2xl font-extrabold text-slate-900">Activa</p>
+                    <p class="mt-1 text-xs text-slate-500">Se actualiza al cargar la ubicación.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 rounded-[1.5rem] border border-slate-100 bg-slate-50 p-4">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Semana</p>
+                        <h3 class="mt-1 text-xl font-bold text-slate-900">Pronóstico semanal</h3>
+                    </div>
+                    <p class="text-sm text-slate-500">Temperatura máxima, mínima y probabilidad de lluvia.</p>
+                </div>
+                <div id="climaSemanal" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div class="rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500">Cargando pronóstico semanal...</div>
+                </div>
+            </div>
+
+            <div class="mt-6 rounded-[1.5rem] border border-slate-100 bg-slate-50 p-4">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Calendario</p>
+                        <h3 id="climaMesLabel" class="mt-1 text-xl font-bold text-slate-900">Calendario mensual</h3>
+                    </div>
+                    <p id="climaMesDetalle" class="text-sm text-slate-500">Mostrando días con pronóstico disponible.</p>
+                </div>
+                <div id="climaCalendario">
+                    <div class="rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500">Cargando calendario mensual...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <nav class="fixed inset-x-3 bottom-3 z-50 rounded-[1.6rem] border border-slate-200/70 bg-white/95 p-2 shadow-2xl shadow-slate-300/40 backdrop-blur md:hidden" aria-label="Navegación móvil">
+        <div class="grid grid-cols-4 gap-2">
+            <button type="button" data-scroll-to="resumen-section" data-active="true" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-green-700">
+                <span class="text-base" aria-hidden="true">📊</span>
+                Resumen
+            </button>
+            <button type="button" data-scroll-to="climaPanel" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
+                <span class="text-base" aria-hidden="true">🌦️</span>
+                Clima
+            </button>
+            <a href="index.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
+                <span class="text-base" aria-hidden="true">🧾</span>
+                Datos
+            </a>
+            <a href="history.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
+                <span class="text-base" aria-hidden="true">📚</span>
+                Historial
+            </a>
+        </div>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js?v=20260714-3"></script>
+</body>
+</html>
