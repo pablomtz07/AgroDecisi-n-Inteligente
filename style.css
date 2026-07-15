@@ -130,6 +130,17 @@ table tbody tr:hover {
     overflow-x: hidden;
 }
 
+@media (min-width: 1280px) {
+    .dashboard-screen {
+        overflow: hidden;
+    }
+
+    .dashboard-screen #dashboardPage {
+        height: calc(100vh - 5.25rem);
+        overflow: hidden;
+    }
+}
+
 @media (max-width: 767px) {
     .mobile-stack-tight {
         gap: 1rem;
