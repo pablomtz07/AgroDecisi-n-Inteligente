@@ -20,6 +20,7 @@ const DEFAULT_LOCATION = {
 
 const DEFAULT_MAP_ZOOM = 12;
 const MAP_PAGE_ZOOM = 17;
+const TEMPORAL_HORIZON_DAYS = 7;
 
 const PRICE_CACHE_TTL_MS = 60 * 60 * 1000;
 
@@ -135,6 +136,16 @@ document.addEventListener("DOMContentLoaded", () => {
         costos: $("costos"),
         resultado: $("resultado"),
         recomendacion: $("recomendacion"),
+        temporalPanel: $("temporalPanel"),
+        temporalResumen: $("temporalResumen"),
+        temporalEstado: $("temporalEstado"),
+        temporalMejorDia: $("temporalMejorDia"),
+        temporalMejorDetalle: $("temporalMejorDetalle"),
+        temporalDiferencia: $("temporalDiferencia"),
+        temporalDiferenciaDetalle: $("temporalDiferenciaDetalle"),
+        temporalHumedad: $("temporalHumedad"),
+        temporalHumedadDetalle: $("temporalHumedadDetalle"),
+        temporalLista: $("temporalLista"),
         alertasLista: $("alertasLista"),
         alertasConteo: $("alertasConteo"),
         graficoRentabilidad: $("graficoRentabilidad"),
@@ -187,7 +198,8 @@ document.addEventListener("DOMContentLoaded", () => {
         parcelDrawing: false,
         humiditySource: "manual",
         priceRequestId: 0,
-        climateForecast: null
+        climateForecast: null,
+        lastResult: null
     };
 
     const fieldIds = [
@@ -254,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
         initializeMap();
 
         if (!applyPendingScenario()) {
-            fetchClimate();
+            fetchClimate(null, { includeDaily: true });
         }
 
         if (shouldAutoLoadPrice()) {
@@ -1712,6 +1724,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderResults(result) {
+        state.lastResult = result;
         elements.produccion.textContent = `${formatDecimal(result.produccion, 2)} tn`;
         elements.ingreso.textContent = formatCurrency(result.ingresoBruto);
         elements.costos.textContent = formatCurrency(result.gastosTotales);
@@ -1721,6 +1734,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.recomendacion.textContent = result.recommendationText;
         elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
 
+        renderTemporalAnalysis(result);
         renderAlerts(result);
         renderChart(result.ingresoBruto, result.gastosTotales, result.ingresoNeto);
     }
@@ -1919,6 +1933,383 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function renderTemporalAnalysis(result) {
+        if (!elements.temporalPanel || !elements.temporalLista) {
+            return;
+        }
+
+        if (!result) {
+            resetTemporalPanel("Calculá un escenario para comparar hoy con los próximos días.");
+            return;
+        }
+
+        const analysis = buildTemporalAnalysis(result);
+        if (!analysis.available) {
+            resetTemporalPanel(analysis.message);
+            return;
+        }
+
+        const { best, today, threshold, recommendation, rows } = analysis;
+        const deltaLabel = formatSignedCurrency(best.ingresoNeto - today.ingresoNeto);
+        const humidityLabel = `${formatDecimal(best.humedadEstimada, 1)}%`;
+        const bestDateLabel = best.label;
+
+        elements.temporalResumen.textContent = recommendation.summary;
+        elements.temporalEstado.textContent = recommendation.stateLabel;
+        elements.temporalEstado.className = `rounded-full border px-3 py-1 text-[11px] font-semibold ${recommendation.stateTone}`;
+        elements.temporalMejorDia.textContent = bestDateLabel;
+        elements.temporalMejorDetalle.textContent = best.detail;
+        elements.temporalDiferencia.textContent = deltaLabel;
+        elements.temporalDiferencia.className = `mt-1 text-lg font-extrabold ${best.ingresoNeto - today.ingresoNeto >= 0 ? "text-emerald-700" : "text-red-600"}`;
+        elements.temporalDiferenciaDetalle.textContent = recommendation.deltaDetail(threshold);
+        elements.temporalHumedad.textContent = humidityLabel;
+        elements.temporalHumedadDetalle.textContent = best.weatherLabel;
+
+        elements.temporalLista.replaceChildren();
+
+        rows.forEach((row) => {
+            const card = document.createElement("article");
+            const isBest = row.index === best.index;
+            const tone = row.deltaVsToday >= threshold ? "success" : row.deltaVsToday <= -threshold ? "danger" : "warning";
+            const toneClasses = {
+                success: "border-emerald-200 bg-emerald-50/70",
+                warning: "border-amber-200 bg-amber-50/70",
+                danger: "border-red-200 bg-red-50/70"
+            };
+
+            card.className = `rounded-2xl border p-4 shadow-sm ${isBest ? "ring-2 ring-emerald-500/20" : toneClasses[tone]}`;
+
+            const topRow = document.createElement("div");
+            topRow.className = "flex items-start justify-between gap-3";
+
+            const left = document.createElement("div");
+            left.className = "min-w-0";
+
+            const day = document.createElement("p");
+            day.className = "text-xs font-bold uppercase tracking-wider text-slate-400";
+            day.textContent = row.label;
+
+            const title = document.createElement("p");
+            title.className = "mt-1 text-sm font-bold text-slate-800";
+            title.textContent = row.shortLabel;
+
+            const meta = document.createElement("p");
+            meta.className = "mt-1 text-[11px] text-slate-500";
+            meta.textContent = `Humedad ${formatDecimal(row.humedadEstimada, 1)}% · ${row.weatherLabel}`;
+
+            left.append(day, title, meta);
+
+            const badge = document.createElement("span");
+            badge.className = `shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${row.badgeClass}`;
+            badge.textContent = row.actionLabel;
+
+            topRow.append(left, badge);
+
+            const values = document.createElement("div");
+            values.className = "mt-3 grid gap-2 text-xs text-slate-600";
+
+            const net = document.createElement("p");
+            net.innerHTML = `<span class="font-semibold text-slate-500">Neto:</span> <span class="font-bold text-slate-900">${formatCurrency(row.ingresoNeto)}</span>`;
+
+            const delta = document.createElement("p");
+            delta.innerHTML = `<span class="font-semibold text-slate-500">Vs hoy:</span> <span class="font-bold ${row.deltaVsToday >= 0 ? "text-emerald-700" : "text-red-600"}">${formatSignedCurrency(row.deltaVsToday)}</span>`;
+
+            const risk = document.createElement("p");
+            risk.innerHTML = `<span class="font-semibold text-slate-500">Riesgo:</span> <span class="font-bold ${row.riskToneText}">${row.riskLabel}</span>`;
+
+            values.append(net, delta, risk);
+
+            card.append(topRow, values);
+            elements.temporalLista.appendChild(card);
+        });
+    }
+
+    function resetTemporalPanel(message) {
+        if (elements.temporalResumen) {
+            elements.temporalResumen.textContent = message;
+        }
+        if (elements.temporalEstado) {
+            elements.temporalEstado.textContent = "Sin análisis";
+            elements.temporalEstado.className = "rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700";
+        }
+        if (elements.temporalMejorDia) {
+            elements.temporalMejorDia.textContent = "---";
+        }
+        if (elements.temporalMejorDetalle) {
+            elements.temporalMejorDetalle.textContent = "Esperando datos.";
+        }
+        if (elements.temporalDiferencia) {
+            elements.temporalDiferencia.textContent = "---";
+            elements.temporalDiferencia.className = "mt-1 text-lg font-extrabold text-slate-900";
+        }
+        if (elements.temporalDiferenciaDetalle) {
+            elements.temporalDiferenciaDetalle.textContent = "Sin comparación disponible.";
+        }
+        if (elements.temporalHumedad) {
+            elements.temporalHumedad.textContent = "---";
+        }
+        if (elements.temporalHumedadDetalle) {
+            elements.temporalHumedadDetalle.textContent = "Sin cálculo aún.";
+        }
+        if (elements.temporalLista) {
+            elements.temporalLista.replaceChildren();
+            const empty = document.createElement("div");
+            empty.className = "rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-400";
+            empty.textContent = message;
+            elements.temporalLista.appendChild(empty);
+        }
+    }
+
+    function buildTemporalAnalysis(result) {
+        const daily = state.climateForecast?.daily;
+        const times = Array.isArray(daily?.time) ? daily.time : [];
+
+        if (!times.length) {
+            return {
+                available: false,
+                message: "Necesitás pronóstico climático para comparar días. Cargá el clima y volvé a calcular."
+            };
+        }
+
+        const todayKey = toDateKey(new Date());
+        let startIndex = times.findIndex((key) => key >= todayKey);
+        if (startIndex < 0) {
+            startIndex = 0;
+        }
+
+        const horizon = Math.min(TEMPORAL_HORIZON_DAYS, times.length - startIndex);
+        if (horizon <= 0) {
+            return {
+                available: false,
+                message: "No hay pronóstico suficiente para armar la comparación temporal."
+            };
+        }
+
+        const rows = [];
+        let estimatedHumidity = result.humedadActual;
+
+        for (let offset = 0; offset < horizon; offset += 1) {
+            const index = startIndex + offset;
+            const forecast = buildTemporalForecastDay(daily, index, times[index]);
+
+            if (offset > 0) {
+                estimatedHumidity = clampNumber(
+                    estimatedHumidity + estimateHumidityDelta(forecast),
+                    0,
+                    100
+                );
+            }
+
+            const waitingLossPct = estimateDelayLossPct(offset, forecast, estimatedHumidity, result);
+            const adjustedProduction = result.produccion * (1 - waitingLossPct / 100);
+            const secadaPoints = Math.max(0, estimatedHumidity - result.humedadBase);
+            const costoSecada = adjustedProduction * secadaPoints * result.costoSecada;
+            const costoFlete = adjustedProduction * result.tarifaFlete * result.distanciaFlete;
+            const ingresoBruto = adjustedProduction * result.precio;
+            const ingresoNeto = ingresoBruto - costoSecada - costoFlete;
+            const deltaVsToday = offset === 0 ? 0 : ingresoNeto - result.ingresoNeto;
+            const risk = getTemporalRisk(forecast, waitingLossPct, secadaPoints);
+
+            rows.push({
+                index: offset,
+                label: formatTemporalDateLabel(forecast.date),
+                shortLabel: offset === 0 ? "Cosechar hoy" : offset === 1 ? "Mañana" : `+${offset} días`,
+                weatherLabel: forecast.weather.label,
+                humidityEstimada: estimatedHumidity,
+                ingresoNeto,
+                deltaVsToday,
+                riskLabel: risk.label,
+                riskToneText: risk.toneText,
+                badgeClass: risk.badgeClass,
+                actionLabel: getTemporalActionLabel(offset, ingresoNeto, result.ingresoNeto, risk.level),
+                detail: `${formatDecimal(secadaPoints, 1)} puntos de secada estimados · ${formatDecimal(waitingLossPct, 2)}% de merma por espera`,
+                weatherCode: forecast.weatherCode,
+                precipitationChance: forecast.precipitationChance,
+                precipitationSum: forecast.precipitationSum
+            });
+        }
+
+        const today = rows[0];
+        const best = rows.reduce((winner, row) => (row.ingresoNeto > winner.ingresoNeto ? row : winner), rows[0]);
+        const deltaBest = best.ingresoNeto - today.ingresoNeto;
+        const threshold = Math.max(25000, Math.abs(today.ingresoNeto) * 0.02);
+        const recommendation = buildTemporalRecommendation(best, deltaBest, threshold);
+
+        return {
+            available: true,
+            rows,
+            today,
+            best,
+            threshold,
+            recommendation
+        };
+    }
+
+    function buildTemporalForecastDay(daily, index, time) {
+        const weatherCode = parseNumber(daily.weather_code?.[index]);
+        const precipitationChance = parseNumber(daily.precipitation_probability_max?.[index]);
+        const precipitationSum = parseNumber(daily.precipitation_sum?.[index]);
+        const tempMax = parseNumber(daily.temperature_2m_max?.[index]);
+        const tempMin = parseNumber(daily.temperature_2m_min?.[index]);
+
+        return {
+            date: time ? new Date(`${time}T00:00:00`) : new Date(),
+            weatherCode,
+            precipitationChance,
+            precipitationSum,
+            tempMax,
+            tempMin,
+            weather: getWeatherMeta(weatherCode)
+        };
+    }
+
+    function estimateHumidityDelta(forecast) {
+        let delta = -0.15;
+
+        if (isWetWeather(forecast)) {
+            delta += 1.05;
+        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 35) {
+            delta += 0.35;
+        }
+
+        if (Number.isFinite(forecast.tempMax) && forecast.tempMax >= 30) {
+            delta -= 0.25;
+        }
+
+        if (Number.isFinite(forecast.tempMin) && forecast.tempMin >= 20) {
+            delta += 0.05;
+        }
+
+        return delta;
+    }
+
+    function estimateDelayLossPct(waitDays, forecast, humidity, result) {
+        let lossPct = waitDays * 0.14;
+
+        if (isWetWeather(forecast)) {
+            lossPct += 0.6;
+        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 35) {
+            lossPct += 0.25;
+        }
+
+        if (Number.isFinite(humidity) && Number.isFinite(result.humedadBase)) {
+            const humidityGap = humidity - result.humedadBase;
+            if (humidityGap > 3) {
+                lossPct += 0.35;
+            } else if (humidityGap > 1) {
+                lossPct += 0.15;
+            }
+        }
+
+        if (Number.isFinite(forecast.tempMax) && forecast.tempMax >= 32) {
+            lossPct += 0.12;
+        }
+
+        return Math.min(lossPct, 4);
+    }
+
+    function getTemporalRisk(forecast, lossPct, humidityGap) {
+        if (isWetWeather(forecast) || lossPct >= 1.5 || humidityGap > 4) {
+            return {
+                level: "danger",
+                label: "Alto",
+                toneText: "text-red-700",
+                badgeClass: "border-red-200 bg-red-50 text-red-700"
+            };
+        }
+
+        if ((Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 35) || lossPct >= 0.8 || humidityGap > 2) {
+            return {
+                level: "warning",
+                label: "Medio",
+                toneText: "text-amber-700",
+                badgeClass: "border-amber-200 bg-amber-50 text-amber-700"
+            };
+        }
+
+        return {
+            level: "success",
+            label: "Bajo",
+            toneText: "text-emerald-700",
+            badgeClass: "border-emerald-200 bg-emerald-50 text-emerald-700"
+        };
+    }
+
+    function buildTemporalRecommendation(best, deltaBest, threshold) {
+        if (best.index === 0) {
+            return {
+                stateLabel: "Cosechar hoy",
+                stateTone: "border-emerald-200 bg-emerald-100 text-emerald-800",
+                summary: "Hoy sigue siendo la mejor ventana con el pronóstico actual.",
+                deltaDetail: () => `Esperar no mejora el margen en forma clara. Umbral de lectura: ${formatCurrency(threshold)}.`,
+            };
+        }
+
+        if (Math.abs(deltaBest) < threshold) {
+            return {
+                stateLabel: "Vigilar",
+                stateTone: "border-amber-200 bg-amber-100 text-amber-800",
+                summary: "La diferencia entre hoy y la mejor fecha es chica. Conviene vigilar antes de definir.",
+                deltaDetail: (limit) => `La mejora esperada es marginal. Umbral de lectura: ${formatCurrency(limit)}.`,
+            };
+        }
+
+        if (deltaBest > 0) {
+            return {
+                stateLabel: "Conviene esperar",
+                stateTone: "border-emerald-200 bg-emerald-100 text-emerald-800",
+                summary: `La mejor ventana aparece ${best.label}. Esperar podría mejorar el resultado.`,
+                deltaDetail: (limit) => `La mejora supera el umbral de referencia de ${formatCurrency(limit)}.`,
+            };
+        }
+
+        return {
+            stateLabel: "Cosechar hoy",
+            stateTone: "border-red-200 bg-red-100 text-red-800",
+            summary: "Esperar no suma rentabilidad: hoy sigue siendo la mejor alternativa.",
+            deltaDetail: (limit) => `La diferencia negativa supera el umbral de referencia de ${formatCurrency(limit)}.`,
+        };
+    }
+
+    function getTemporalActionLabel(offset, income, todayIncome, riskLevel) {
+        if (offset === 0) {
+            return income >= todayIncome ? "Cosechar" : "Hoy";
+        }
+
+        if (riskLevel === "danger") {
+            return "Pausar";
+        }
+
+        if (income >= todayIncome) {
+            return "Esperar";
+        }
+
+        return "Vigilar";
+    }
+
+    function formatTemporalDateLabel(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return "Sin fecha";
+        }
+
+        return date.toLocaleDateString("es-AR", {
+            weekday: "short",
+            day: "2-digit",
+            month: "2-digit"
+        });
+    }
+
+    function isWetWeather(forecast) {
+        const code = Number.isFinite(forecast.weatherCode) ? forecast.weatherCode : NaN;
+        const label = forecast.weather?.label || "";
+        return (
+            (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 60) ||
+            (Number.isFinite(forecast.precipitationSum) && forecast.precipitationSum >= 4) ||
+            ["Llovizna", "Lluvia", "Chubascos", "Tormenta"].includes(label) ||
+            (Number.isFinite(code) && ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95))
+        );
+    }
+
     function persistScenario(result) {
         const history = readHistory();
         history.push(result);
@@ -2086,7 +2477,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderResults(entry);
         updateClimateLocationLabel(entry.latitud, entry.longitud);
         if (hasValidCoordinates(entry.latitud, entry.longitud)) {
-            fetchClimate({ latitud: entry.latitud, longitud: entry.longitud });
+            fetchClimate({ latitud: entry.latitud, longitud: entry.longitud }, { includeDaily: true });
         }
         setActiveNav("dashboard-section");
         document.getElementById("dashboard-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2277,6 +2668,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (renderClimatePage) {
                     renderClimatePageData(data, coordinates);
                 }
+
+                renderTemporalAnalysis(state.lastResult);
             })
             .catch(() => {
                 state.climate = null;
@@ -2293,6 +2686,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (renderClimatePage) {
                     renderClimateError();
                 }
+
+                renderTemporalAnalysis(state.lastResult);
             });
     }
 
@@ -2723,6 +3118,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }).format(Number.isFinite(value) ? value : 0)}`;
     }
 
+    function formatSignedCurrency(value) {
+        const amount = formatCurrency(Math.abs(Number.isFinite(value) ? value : 0));
+        if (!Number.isFinite(value) || value === 0) {
+            return amount;
+        }
+
+        return `${value > 0 ? "+" : "-"} ${amount}`;
+    }
+
     function formatDecimal(value, digits = 2) {
         return new Intl.NumberFormat("es-AR", {
             minimumFractionDigits: digits,
@@ -2734,6 +3138,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Intl.NumberFormat("es-AR", {
             maximumFractionDigits: 0
         }).format(Number.isFinite(value) ? value : 0);
+    }
+
+    function clampNumber(value, min, max) {
+        if (!Number.isFinite(value)) {
+            return min;
+        }
+
+        return Math.min(Math.max(value, min), max);
     }
 
     function formatDateTime(value) {
