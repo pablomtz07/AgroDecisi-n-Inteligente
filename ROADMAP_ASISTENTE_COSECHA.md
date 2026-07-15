@@ -16,7 +16,7 @@ La idea es avanzar por partes, sin romper lo que ya funciona, y dejar claro dond
   - ingreso neto
   - margen
   - alertas basicas
-- Ya empezamos la Fase 1 con un panel de analisis temporal para comparar hoy con los proximos dias.
+- Ya empezamos la Fase 1 con un motor temporal de 30 dias para comparar hoy con el calendario futuro.
 
 ## Objetivo general
 
@@ -51,8 +51,8 @@ Salida esperada:
 
 Resultado:
 
-- tabla o lista por dia
-- primer ranking de conveniencia
+- calendario de decision por dia
+- ranking inicial de conveniencia
 
 ### 2. Modulo de humedad y mermas
 
@@ -186,7 +186,7 @@ Vamos a considerar que esta evolucion va bien si la app puede:
 
 ## Proximo paso sugerido
 
-Empezar por la **Fase 1: Base temporal**.
+El siguiente paso natural es la **Fase 2: Humedad y mermas**, porque ya quedo lista la base temporal y ahora podemos afinar la evolucion diaria.
 
 Eso significa definir:
 

@@ -20,7 +20,7 @@ const DEFAULT_LOCATION = {
 
 const DEFAULT_MAP_ZOOM = 12;
 const MAP_PAGE_ZOOM = 17;
-const TEMPORAL_HORIZON_DAYS = 7;
+const TEMPORAL_HORIZON_DAYS = 30;
 
 const PRICE_CACHE_TTL_MS = 60 * 60 * 1000;
 
@@ -2085,7 +2085,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!result) {
-            resetTemporalPanel("Calculá un escenario para comparar hoy con los próximos días.");
+            resetTemporalPanel("Calcula un escenario para ver el calendario predictivo de 30 dias.");
             return;
         }
 
@@ -2095,79 +2095,22 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const { best, today, threshold, recommendation, rows } = analysis;
+        const { best, today, threshold, recommendation } = analysis;
         const deltaLabel = formatSignedCurrency(best.ingresoNeto - today.ingresoNeto);
-        const humidityLabel = `${formatDecimal(best.humedadEstimada, 1)}%`;
-        const bestDateLabel = best.label;
 
         elements.temporalResumen.textContent = recommendation.summary;
         elements.temporalEstado.textContent = recommendation.stateLabel;
         elements.temporalEstado.className = `rounded-full border px-3 py-1 text-[11px] font-semibold ${recommendation.stateTone}`;
-        elements.temporalMejorDia.textContent = bestDateLabel;
-        elements.temporalMejorDetalle.textContent = best.detail;
+        elements.temporalMejorDia.textContent = best.dayLabel;
+        elements.temporalMejorDetalle.textContent = `${formatCurrency(best.ingresoNeto)} neto · ${formatDecimal(best.waitingLossPct, 2)}% de merma · ${best.stateDetail}`;
         elements.temporalDiferencia.textContent = deltaLabel;
         elements.temporalDiferencia.className = `mt-1 text-lg font-extrabold ${best.ingresoNeto - today.ingresoNeto >= 0 ? "text-emerald-700" : "text-red-600"}`;
         elements.temporalDiferenciaDetalle.textContent = recommendation.deltaDetail(threshold);
-        elements.temporalHumedad.textContent = humidityLabel;
-        elements.temporalHumedadDetalle.textContent = best.weatherLabel;
+        elements.temporalHumedad.textContent = `${formatDecimal(best.humidityEstimada, 1)}%`;
+        elements.temporalHumedadDetalle.textContent = analysis.summary;
 
-        elements.temporalLista.replaceChildren();
-
-        rows.forEach((row) => {
-            const card = document.createElement("article");
-            const isBest = row.index === best.index;
-            const tone = row.deltaVsToday >= threshold ? "success" : row.deltaVsToday <= -threshold ? "danger" : "warning";
-            const toneClasses = {
-                success: "border-emerald-200 bg-emerald-50/70",
-                warning: "border-amber-200 bg-amber-50/70",
-                danger: "border-red-200 bg-red-50/70"
-            };
-
-            card.className = `rounded-2xl border p-4 shadow-sm ${isBest ? "ring-2 ring-emerald-500/20" : toneClasses[tone]}`;
-
-            const topRow = document.createElement("div");
-            topRow.className = "flex items-start justify-between gap-3";
-
-            const left = document.createElement("div");
-            left.className = "min-w-0";
-
-            const day = document.createElement("p");
-            day.className = "text-xs font-bold uppercase tracking-wider text-slate-400";
-            day.textContent = row.label;
-
-            const title = document.createElement("p");
-            title.className = "mt-1 text-sm font-bold text-slate-800";
-            title.textContent = row.shortLabel;
-
-            const meta = document.createElement("p");
-            meta.className = "mt-1 text-[11px] text-slate-500";
-            meta.textContent = `Humedad ${formatDecimal(row.humedadEstimada, 1)}% · ${row.weatherLabel}`;
-
-            left.append(day, title, meta);
-
-            const badge = document.createElement("span");
-            badge.className = `shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${row.badgeClass}`;
-            badge.textContent = row.actionLabel;
-
-            topRow.append(left, badge);
-
-            const values = document.createElement("div");
-            values.className = "mt-3 grid gap-2 text-xs text-slate-600";
-
-            const net = document.createElement("p");
-            net.innerHTML = `<span class="font-semibold text-slate-500">Neto:</span> <span class="font-bold text-slate-900">${formatCurrency(row.ingresoNeto)}</span>`;
-
-            const delta = document.createElement("p");
-            delta.innerHTML = `<span class="font-semibold text-slate-500">Vs hoy:</span> <span class="font-bold ${row.deltaVsToday >= 0 ? "text-emerald-700" : "text-red-600"}">${formatSignedCurrency(row.deltaVsToday)}</span>`;
-
-            const risk = document.createElement("p");
-            risk.innerHTML = `<span class="font-semibold text-slate-500">Riesgo:</span> <span class="font-bold ${row.riskToneText}">${row.riskLabel}</span>`;
-
-            values.append(net, delta, risk);
-
-            card.append(topRow, values);
-            elements.temporalLista.appendChild(card);
-        });
+        elements.temporalLista.className = "mt-3";
+        elements.temporalLista.innerHTML = buildTemporalCalendarMarkup(analysis);
     }
 
     function resetTemporalPanel(message) {
@@ -2198,6 +2141,7 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.temporalHumedadDetalle.textContent = "Sin cálculo aún.";
         }
         if (elements.temporalLista) {
+            elements.temporalLista.className = "mt-3";
             elements.temporalLista.replaceChildren();
             const empty = document.createElement("div");
             empty.className = "rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-400";
@@ -2208,154 +2152,258 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function buildTemporalAnalysis(result) {
         const daily = state.climateForecast?.daily;
-        const times = Array.isArray(daily?.time) ? daily.time : [];
+        const forecastSeries = buildTemporalForecastSeries(daily, TEMPORAL_HORIZON_DAYS);
 
-        if (!times.length) {
+        if (!forecastSeries.length) {
             return {
                 available: false,
-                message: "Necesitás pronóstico climático para comparar días. Cargá el clima y volvé a calcular."
-            };
-        }
-
-        const todayKey = toDateKey(new Date());
-        let startIndex = times.findIndex((key) => key >= todayKey);
-        if (startIndex < 0) {
-            startIndex = 0;
-        }
-
-        const horizon = Math.min(TEMPORAL_HORIZON_DAYS, times.length - startIndex);
-        if (horizon <= 0) {
-            return {
-                available: false,
-                message: "No hay pronóstico suficiente para armar la comparación temporal."
+                message: "Necesitas pronostico climatico para armar el calendario. Cargalo y volve a calcular."
             };
         }
 
         const rows = [];
-        let estimatedHumidity = result.humedadActual;
+        const baseHumidity = Number.isFinite(result.humedadActual)
+            ? result.humedadActual
+            : Number.isFinite(result.humedadBase)
+                ? result.humedadBase
+                : 0;
 
-        for (let offset = 0; offset < horizon; offset += 1) {
-            const index = startIndex + offset;
-            const forecast = buildTemporalForecastDay(daily, index, times[index]);
+        let previousHumidity = baseHumidity;
+        let cumulativeLossPct = 0;
 
-            if (offset > 0) {
-                estimatedHumidity = clampNumber(
-                    estimatedHumidity + estimateHumidityDelta(forecast),
-                    0,
-                    100
-                );
+        forecastSeries.forEach((forecast, index) => {
+            const humidityDelta = index === 0
+                ? 0
+                : estimateHumidityDelta(forecast, previousHumidity, result);
+
+            if (index > 0) {
+                previousHumidity = clampNumber(previousHumidity + humidityDelta, 0, 100);
             }
 
-            const waitingLossPct = estimateDelayLossPct(offset, forecast, estimatedHumidity, result);
-            const adjustedProduction = result.produccion * (1 - waitingLossPct / 100);
-            const secadaPoints = Math.max(0, estimatedHumidity - result.humedadBase);
+            const humidityEstimada = previousHumidity;
+            const waitingLossPct = estimateDelayLossPct(index, forecast, humidityEstimada, result);
+            cumulativeLossPct = index === 0
+                ? 0
+                : Math.min(8, cumulativeLossPct + Math.max(0.08, waitingLossPct * 0.22));
+
+            const adjustedProduction = result.produccion * (1 - cumulativeLossPct / 100);
+            const secadaPoints = Math.max(0, humidityEstimada - result.humedadBase);
             const costoSecada = adjustedProduction * secadaPoints * result.costoSecada;
             const costoFlete = adjustedProduction * result.tarifaFlete * result.distanciaFlete;
             const ingresoBruto = adjustedProduction * result.precio;
             const ingresoNeto = ingresoBruto - costoSecada - costoFlete;
-            const deltaVsToday = offset === 0 ? 0 : ingresoNeto - result.ingresoNeto;
-            const risk = getTemporalRisk(forecast, waitingLossPct, secadaPoints);
+            const deltaVsToday = index === 0 ? 0 : ingresoNeto - result.ingresoNeto;
+            const humidityGap = humidityEstimada - result.humedadBase;
+            const risk = getTemporalRisk(forecast, waitingLossPct, humidityGap);
 
             rows.push({
-                index: offset,
-                label: formatTemporalDateLabel(forecast.date),
-                shortLabel: offset === 0 ? "Cosechar hoy" : offset === 1 ? "Mañana" : `+${offset} días`,
+                index,
+                date: forecast.date,
+                key: toDateKey(forecast.date),
+                dayLabel: formatTemporalDateLabel(forecast.date),
+                dayNumber: forecast.date.getDate(),
                 weatherLabel: forecast.weather.label,
-                humidityEstimada: estimatedHumidity,
+                weatherIcon: forecast.weather.icon,
+                humidityEstimada,
+                humidityGap,
+                waitingLossPct,
+                cumulativeLossPct,
+                secadaPoints,
+                costoSecada,
+                costoFlete,
+                ingresoBruto,
                 ingresoNeto,
                 deltaVsToday,
                 riskLabel: risk.label,
+                riskLevel: risk.level,
                 riskToneText: risk.toneText,
                 badgeClass: risk.badgeClass,
-                actionLabel: getTemporalActionLabel(offset, ingresoNeto, result.ingresoNeto, risk.level),
-                detail: `${formatDecimal(secadaPoints, 1)} puntos de secada estimados · ${formatDecimal(waitingLossPct, 2)}% de merma por espera`,
                 weatherCode: forecast.weatherCode,
                 precipitationChance: forecast.precipitationChance,
-                precipitationSum: forecast.precipitationSum
+                precipitationSum: forecast.precipitationSum,
+                tempMax: forecast.tempMax,
+                tempMin: forecast.tempMin,
+                source: forecast.source,
+                isProjected: forecast.source === "proyeccion"
             });
-        }
+        });
 
         const today = rows[0];
-        const best = rows.reduce((winner, row) => (row.ingresoNeto > winner.ingresoNeto ? row : winner), rows[0]);
+        const bestPool = rows.filter((row) => row.riskLevel !== "danger");
+        const rankingPool = bestPool.length ? bestPool : rows;
+        const best = rankingPool.reduce((winner, row) => (row.ingresoNeto > winner.ingresoNeto ? row : winner), rankingPool[0]);
         const deltaBest = best.ingresoNeto - today.ingresoNeto;
-        const threshold = Math.max(25000, Math.abs(today.ingresoNeto) * 0.02);
-        const recommendation = buildTemporalRecommendation(best, deltaBest, threshold);
+        const threshold = Math.max(25000, Math.abs(today.ingresoNeto) * 0.018);
+        const recommendation = buildTemporalRecommendation(best, deltaBest, threshold, rows);
+
+        let previousState = null;
+        const scoredRows = rows.map((row) => {
+            const stateMeta = getTemporalStateMeta(row, best.key, threshold, previousState);
+            previousState = stateMeta.state;
+            return {
+                ...row,
+                ...stateMeta,
+                isBest: row.key === best.key
+            };
+        });
+
+        const projectedDays = scoredRows.filter((row) => row.isProjected).length;
+        const counts = scoredRows.reduce((acc, row) => {
+            acc[row.state] = (acc[row.state] || 0) + 1;
+            return acc;
+        }, {});
 
         return {
             available: true,
-            rows,
-            today,
-            best,
+            rows: scoredRows,
+            today: scoredRows[0],
+            best: scoredRows.find((row) => row.key === best.key) ?? scoredRows[0],
             threshold,
-            recommendation
+            recommendation,
+            projectedDays,
+            summary: `Calendario de ${rows.length} dias con humedad, merma y clima. ${projectedDays > 0 ? `Los ultimos ${projectedDays} dias son proyeccion.` : "Todo el horizonte entra dentro del pronostico real."}`,
+            counts
         };
     }
 
-    function buildTemporalForecastDay(daily, index, time) {
-        const weatherCode = parseNumber(daily.weather_code?.[index]);
-        const precipitationChance = parseNumber(daily.precipitation_probability_max?.[index]);
-        const precipitationSum = parseNumber(daily.precipitation_sum?.[index]);
-        const tempMax = parseNumber(daily.temperature_2m_max?.[index]);
-        const tempMin = parseNumber(daily.temperature_2m_min?.[index]);
+    function buildTemporalForecastSeries(daily, horizonDays) {
+        const times = Array.isArray(daily?.time) ? daily.time : [];
+        if (!times.length) {
+            return [];
+        }
+
+        const series = [];
+        let previous = null;
+
+        for (let index = 0; index < horizonDays; index += 1) {
+            const forecast = buildTemporalForecastDay(daily, times, index, previous);
+            series.push(forecast);
+            previous = forecast;
+        }
+
+        return series;
+    }
+
+    function buildTemporalForecastDay(daily, times, index, previous) {
+        if (index < times.length) {
+            const weatherCode = parseNumber(daily.weather_code?.[index]);
+            const precipitationChance = parseNumber(daily.precipitation_probability_max?.[index]);
+            const precipitationSum = parseNumber(daily.precipitation_sum?.[index]);
+            const tempMax = parseNumber(daily.temperature_2m_max?.[index]);
+            const tempMin = parseNumber(daily.temperature_2m_min?.[index]);
+            const date = new Date(`${times[index]}T00:00:00`);
+
+            return {
+                date,
+                weatherCode,
+                precipitationChance,
+                precipitationSum,
+                tempMax,
+                tempMin,
+                weather: getWeatherMeta(weatherCode),
+                source: "pronostico"
+            };
+        }
+
+        const last = previous ?? {
+            date: new Date(`${times[times.length - 1]}T00:00:00`),
+            weatherCode: 3,
+            precipitationChance: 20,
+            precipitationSum: 0,
+            tempMax: 24,
+            tempMin: 12,
+            weather: getWeatherMeta(3),
+            source: "pronostico"
+        };
+        const projectedDays = index - times.length + 1;
+        const rainHeavy = isWetWeather(last);
+        const weatherCode = rainHeavy ? 3 : (Number.isFinite(last.weatherCode) ? last.weatherCode : 2);
 
         return {
-            date: time ? new Date(`${time}T00:00:00`) : new Date(),
+            date: addDays(last.date, 1),
             weatherCode,
-            precipitationChance,
-            precipitationSum,
-            tempMax,
-            tempMin,
-            weather: getWeatherMeta(weatherCode)
+            precipitationChance: clampNumber((last.precipitationChance ?? 20) * 0.9 + (rainHeavy ? 8 : 0), 0, 100),
+            precipitationSum: clampNumber((last.precipitationSum ?? 0) * 0.78, 0, 30),
+            tempMax: clampNumber((last.tempMax ?? 24) - (0.05 * projectedDays), -5, 45),
+            tempMin: clampNumber((last.tempMin ?? 12) - (0.03 * projectedDays), -10, 35),
+            weather: getWeatherMeta(weatherCode),
+            source: "proyeccion"
         };
     }
 
-    function estimateHumidityDelta(forecast) {
-        let delta = -0.15;
+    function estimateHumidityDelta(forecast, humidity, result) {
+        let delta = -0.18;
 
         if (isWetWeather(forecast)) {
             delta += 1.05;
-        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 35) {
-            delta += 0.35;
+        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 50) {
+            delta += 0.4;
+        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 25) {
+            delta += 0.15;
         }
 
-        if (Number.isFinite(forecast.tempMax) && forecast.tempMax >= 30) {
-            delta -= 0.25;
+        if (Number.isFinite(forecast.tempMax)) {
+            if (forecast.tempMax >= 34) {
+                delta -= 0.24;
+            } else if (forecast.tempMax >= 30) {
+                delta -= 0.18;
+            } else if (forecast.tempMax <= 18) {
+                delta += 0.12;
+            }
         }
 
-        if (Number.isFinite(forecast.tempMin) && forecast.tempMin >= 20) {
-            delta += 0.05;
+        if (Number.isFinite(forecast.tempMin)) {
+            if (forecast.tempMin >= 18) {
+                delta += 0.06;
+            } else if (forecast.tempMin <= 8) {
+                delta -= 0.05;
+            }
+        }
+
+        if (Number.isFinite(result.humedadBase) && humidity > result.humedadBase + 4) {
+            delta -= 0.04;
         }
 
         return delta;
     }
 
     function estimateDelayLossPct(waitDays, forecast, humidity, result) {
-        let lossPct = waitDays * 0.14;
+        let lossPct = waitDays * 0.16;
 
         if (isWetWeather(forecast)) {
-            lossPct += 0.6;
-        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 35) {
-            lossPct += 0.25;
+            lossPct += 0.7;
+        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 50) {
+            lossPct += 0.35;
+        } else if (Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 25) {
+            lossPct += 0.12;
         }
 
         if (Number.isFinite(humidity) && Number.isFinite(result.humedadBase)) {
             const humidityGap = humidity - result.humedadBase;
             if (humidityGap > 3) {
-                lossPct += 0.35;
+                lossPct += 0.25;
             } else if (humidityGap > 1) {
-                lossPct += 0.15;
+                lossPct += 0.1;
             }
         }
 
         if (Number.isFinite(forecast.tempMax) && forecast.tempMax >= 32) {
-            lossPct += 0.12;
+            lossPct += 0.1;
         }
 
-        return Math.min(lossPct, 4);
+        if (Number.isFinite(forecast.tempMin) && forecast.tempMin <= 8) {
+            lossPct += 0.08;
+        }
+
+        if (forecast.source === "proyeccion") {
+            lossPct += Math.min(0.4, waitDays * 0.02);
+        }
+
+        return Math.min(lossPct, 6);
     }
 
     function getTemporalRisk(forecast, lossPct, humidityGap) {
-        if (isWetWeather(forecast) || lossPct >= 1.5 || humidityGap > 4) {
+        if (isWetWeather(forecast) || lossPct >= 1.4 || humidityGap > 4) {
             return {
                 level: "danger",
                 label: "Alto",
@@ -2364,7 +2412,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         }
 
-        if ((Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 35) || lossPct >= 0.8 || humidityGap > 2) {
+        if ((Number.isFinite(forecast.precipitationChance) && forecast.precipitationChance >= 50) || lossPct >= 0.8 || humidityGap > 2) {
             return {
                 level: "warning",
                 label: "Medio",
@@ -2381,13 +2429,15 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    function buildTemporalRecommendation(best, deltaBest, threshold) {
+    function buildTemporalRecommendation(best, deltaBest, threshold, rows) {
+        const projectedDays = rows.filter((row) => row.isProjected).length;
+
         if (best.index === 0) {
             return {
                 stateLabel: "Cosechar hoy",
                 stateTone: "border-emerald-200 bg-emerald-100 text-emerald-800",
-                summary: "Hoy sigue siendo la mejor ventana con el pronóstico actual.",
-                deltaDetail: () => `Esperar no mejora el margen en forma clara. Umbral de lectura: ${formatCurrency(threshold)}.`,
+                summary: `Hoy sigue siendo la mejor ventana. ${projectedDays > 0 ? `Hay ${projectedDays} dias proyectados al final del horizonte.` : "Todo el horizonte esta cubierto por pronostico real."}`,
+                deltaDetail: () => `Esperar no mejora el margen en forma clara. Umbral de lectura: ${formatCurrency(threshold)}.`
             };
         }
 
@@ -2396,16 +2446,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 stateLabel: "Vigilar",
                 stateTone: "border-amber-200 bg-amber-100 text-amber-800",
                 summary: "La diferencia entre hoy y la mejor fecha es chica. Conviene vigilar antes de definir.",
-                deltaDetail: (limit) => `La mejora esperada es marginal. Umbral de lectura: ${formatCurrency(limit)}.`,
+                deltaDetail: (limit) => `La mejora esperada es marginal. Umbral de lectura: ${formatCurrency(limit)}.`
             };
         }
 
         if (deltaBest > 0) {
             return {
-                stateLabel: "Conviene esperar",
-                stateTone: "border-emerald-200 bg-emerald-100 text-emerald-800",
-                summary: `La mejor ventana aparece ${best.label}. Esperar podría mejorar el resultado.`,
-                deltaDetail: (limit) => `La mejora supera el umbral de referencia de ${formatCurrency(limit)}.`,
+                stateLabel: "Esperar",
+                stateTone: "border-sky-200 bg-sky-100 text-sky-800",
+                summary: `La mejor ventana aparece ${formatTemporalDateLabel(best.date)}. Esperar podria mejorar el resultado.`,
+                deltaDetail: (limit) => `La mejora supera el umbral de referencia de ${formatCurrency(limit)}.`
             };
         }
 
@@ -2413,24 +2463,74 @@ document.addEventListener("DOMContentLoaded", () => {
             stateLabel: "Cosechar hoy",
             stateTone: "border-red-200 bg-red-100 text-red-800",
             summary: "Esperar no suma rentabilidad: hoy sigue siendo la mejor alternativa.",
-            deltaDetail: (limit) => `La diferencia negativa supera el umbral de referencia de ${formatCurrency(limit)}.`,
+            deltaDetail: (limit) => `La diferencia negativa supera el umbral de referencia de ${formatCurrency(limit)}.`
         };
     }
 
-    function getTemporalActionLabel(offset, income, todayIncome, riskLevel) {
-        if (offset === 0) {
-            return income >= todayIncome ? "Cosechar" : "Hoy";
+    function getTemporalActionLabel(state, isBest) {
+        if (isBest) {
+            return "Optimo";
         }
 
-        if (riskLevel === "danger") {
-            return "Pausar";
+        const labels = {
+            cosechar: "Cosechar",
+            pausar: "Pausar",
+            continuar: "Continuar",
+            viable: "Viable",
+            vigilar: "Vigilar"
+        };
+
+        return labels[state] ?? "Vigilar";
+    }
+
+    function getTemporalStateMeta(row, bestKey, threshold, previousState) {
+        if (row.riskLevel === "danger") {
+            return {
+                state: "pausar",
+                stateLabel: "Pausar",
+                stateTone: "border-red-200 bg-red-50 text-red-700",
+                stateCardClass: "border-red-200 bg-red-50/70",
+                stateDetail: "Lluvia o exceso de humedad bloquean la jornada."
+            };
         }
 
-        if (income >= todayIncome) {
-            return "Esperar";
+        if (row.key === bestKey) {
+            return {
+                state: "cosechar",
+                stateLabel: "Cosechar",
+                stateTone: "border-emerald-200 bg-emerald-50 text-emerald-700",
+                stateCardClass: "border-emerald-200 bg-emerald-50/70",
+                stateDetail: "Es la mejor ventana economica del horizonte."
+            };
         }
 
-        return "Vigilar";
+        if (previousState === "pausar" && row.deltaVsToday >= -threshold * 0.1 && row.humidityGap <= 3) {
+            return {
+                state: "continuar",
+                stateLabel: "Continuar",
+                stateTone: "border-sky-200 bg-sky-50 text-sky-700",
+                stateCardClass: "border-sky-200 bg-sky-50/70",
+                stateDetail: "La ventana mejora y se puede retomar la cosecha."
+            };
+        }
+
+        if (row.deltaVsToday >= threshold * 0.45 && row.humidityGap <= 2) {
+            return {
+                state: "viable",
+                stateLabel: "Viable",
+                stateTone: "border-green-200 bg-green-50 text-green-700",
+                stateCardClass: "border-green-200 bg-green-50/70",
+                stateDetail: "La fecha sigue siendo operativamente interesante."
+            };
+        }
+
+        return {
+            state: "vigilar",
+            stateLabel: "Vigilar",
+            stateTone: "border-amber-200 bg-amber-50 text-amber-700",
+            stateCardClass: "border-amber-200 bg-amber-50/70",
+            stateDetail: "La ventana no esta clara y conviene seguir mirando."
+        };
     }
 
     function formatTemporalDateLabel(date) {
@@ -2443,6 +2543,97 @@ document.addEventListener("DOMContentLoaded", () => {
             day: "2-digit",
             month: "2-digit"
         });
+    }
+
+    function buildTemporalCalendarMarkup(analysis) {
+        const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
+        const startOffset = (analysis.today.date.getDay() + 6) % 7;
+        const emptyCells = Array.from({ length: startOffset }, () => `
+            <div class="min-h-28 rounded-2xl border border-dashed border-slate-200 bg-white/60"></div>
+        `).join("");
+
+        const statePalette = {
+            cosechar: {
+                cell: "border-emerald-200 bg-emerald-50/90",
+                badge: "border-emerald-200 bg-emerald-100 text-emerald-800"
+            },
+            continuar: {
+                cell: "border-sky-200 bg-sky-50/90",
+                badge: "border-sky-200 bg-sky-100 text-sky-800"
+            },
+            viable: {
+                cell: "border-green-200 bg-green-50/90",
+                badge: "border-green-200 bg-green-100 text-green-800"
+            },
+            vigilar: {
+                cell: "border-amber-200 bg-amber-50/90",
+                badge: "border-amber-200 bg-amber-100 text-amber-800"
+            },
+            pausar: {
+                cell: "border-red-200 bg-red-50/90",
+                badge: "border-red-200 bg-red-100 text-red-800"
+            }
+        };
+
+        const legendItems = [
+            ["cosechar", `Cosechar (${analysis.counts.cosechar ?? 0})`],
+            ["continuar", `Continuar (${analysis.counts.continuar ?? 0})`],
+            ["viable", `Viable (${analysis.counts.viable ?? 0})`],
+            ["vigilar", `Vigilar (${analysis.counts.vigilar ?? 0})`],
+            ["pausar", `Pausar (${analysis.counts.pausar ?? 0})`]
+        ].map(([state, label]) => `
+            <span class="rounded-full border px-2.5 py-1 text-[10px] font-semibold ${statePalette[state].badge}">${label}</span>
+        `).join("");
+
+        const headers = weekdayLabels.map((label) => `
+            <div class="pb-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">${label}</div>
+        `).join("");
+
+        const dayCells = analysis.rows.map((row) => `
+            <div class="min-h-28 rounded-2xl border p-2.5 shadow-sm ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/20" : ""}">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">${row.dayLabel}</p>
+                        <p class="mt-1 text-sm font-extrabold text-slate-900">${row.dayNumber}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        ${row.isProjected ? `<span class="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">Proy</span>` : ""}
+                        <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold ${statePalette[row.state].badge}">${row.stateLabel}</span>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-start justify-between gap-2">
+                    <div>
+                        <p class="text-lg leading-none">${row.weatherIcon}</p>
+                        <p class="mt-1 text-[10px] font-semibold text-slate-600">${row.weatherLabel}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Neto</p>
+                        <p class="mt-0.5 text-xs font-extrabold ${row.ingresoNeto >= 0 ? "text-slate-900" : "text-red-600"}">${formatCurrency(row.ingresoNeto)}</p>
+                    </div>
+                </div>
+                <p class="mt-2 text-[10px] leading-4 text-slate-500">Hum ${formatDecimal(row.humidityEstimada, 1)}% · Merma ${formatDecimal(row.waitingLossPct, 2)}% · ${row.stateDetail}</p>
+            </div>
+        `).join("");
+
+        return `
+            <div class="space-y-3">
+                <div class="flex flex-wrap gap-1.5">${legendItems}</div>
+                <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">${headers}</div>
+                <div class="calendar-month-scroll -mx-1 overflow-x-auto pb-1">
+                    <div class="calendar-month-grid min-w-[560px] px-1 sm:min-w-0">
+                        <div class="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+                            ${emptyCells}
+                            ${dayCells}
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-2xl border border-slate-100 bg-white/80 px-3 py-2 text-[11px] text-slate-500">
+                    ${analysis.projectedDays > 0
+                        ? `Los ultimos ${analysis.projectedDays} dias usan proyeccion porque el pronostico real no llega tan lejos.`
+                        : "Todo el horizonte entra dentro del pronostico disponible."}
+                </div>
+            </div>
+        `;
     }
 
     function isWetWeather(forecast) {
@@ -3069,6 +3260,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function toDateKey(date) {
         const pad = (number) => String(number).padStart(2, "0");
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function addDays(date, days) {
+        const next = new Date(date);
+        next.setDate(next.getDate() + days);
+        return next;
     }
 
     function handleUseLocation() {
