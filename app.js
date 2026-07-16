@@ -2549,7 +2549,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
         const startOffset = (analysis.today.date.getDay() + 6) % 7;
         const emptyCells = Array.from({ length: startOffset }, () => `
-            <div class="min-h-24 rounded-2xl border border-dashed border-slate-200 bg-white/60"></div>
+            <div class="aspect-square min-h-0 rounded-2xl border border-dashed border-slate-200 bg-white/60"></div>
         `).join("");
 
         const statePalette = {
@@ -2585,38 +2585,67 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="rounded-full border px-2.5 py-1 text-[10px] font-semibold ${statePalette[state].badge}">${label}</span>
         `).join("");
 
+        const focusCards = [
+            {
+                label: "Hoy",
+                value: `${analysis.today.dayNumber}`,
+                tone: analysis.today.stateTone
+            },
+            {
+                label: "Mejor fecha",
+                value: `${analysis.best.dayNumber}`,
+                tone: "border-emerald-200 bg-emerald-50 text-emerald-800"
+            },
+            {
+                label: "Proyección",
+                value: `${analysis.projectedDays}`,
+                tone: "border-slate-200 bg-white text-slate-700"
+            }
+        ].map((item) => `
+            <div class="rounded-2xl border px-3 py-2 ${item.tone}">
+                <p class="text-[9px] font-bold uppercase tracking-[0.25em] opacity-70">${item.label}</p>
+                <p class="mt-1 text-lg font-extrabold leading-none">${item.value}</p>
+            </div>
+        `).join("");
+
         const headers = weekdayLabels.map((label) => `
             <div class="pb-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">${label}</div>
         `).join("");
 
         const dayCells = analysis.rows.map((row) => `
-            <div class="min-h-24 rounded-2xl border p-2 shadow-sm ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/20" : ""}">
-                <div class="flex items-start justify-between gap-2">
-                    <div class="min-w-0">
-                        <p class="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">${row.dayLabel}</p>
-                        <p class="mt-0.5 text-sm font-extrabold text-slate-900">${row.dayNumber}</p>
+            <div class="aspect-square min-h-0 rounded-2xl border p-2 shadow-sm ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""}">
+                <div class="flex h-full flex-col justify-between gap-2 overflow-hidden">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">${row.dayLabel}</p>
+                            <p class="mt-0.5 text-sm font-extrabold text-slate-900">${row.dayNumber}</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            ${row.isProjected ? `<span class="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">Proy</span>` : ""}
+                            <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold ${statePalette[row.state].badge}">${row.stateLabel}</span>
+                        </div>
                     </div>
-                    <div class="flex flex-col items-end gap-1">
-                        ${row.isProjected ? `<span class="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">Proy</span>` : ""}
-                        <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold ${statePalette[row.state].badge}">${row.stateLabel}</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-lg leading-none">${row.weatherIcon}</p>
+                            <p class="mt-0.5 truncate text-[9px] font-semibold text-slate-600">${row.weatherLabel}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Hum</p>
+                            <p class="mt-0.5 text-[11px] font-extrabold text-slate-700">${formatDecimal(row.humidityEstimada, 1)}%</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 text-[9px] text-slate-500">
+                        <span class="truncate">${row.isBest ? "Mejor" : row.index === 0 ? "Hoy" : " "}</span>
+                        <span class="font-semibold ${row.ingresoNeto >= 0 ? "text-slate-700" : "text-red-600"}">${formatSignedCurrency(row.deltaVsToday)}</span>
                     </div>
                 </div>
-                <div class="mt-1.5 flex items-start justify-between gap-2">
-                    <div>
-                        <p class="text-base leading-none">${row.weatherIcon}</p>
-                        <p class="mt-0.5 text-[9px] font-semibold text-slate-600">${row.weatherLabel}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Neto</p>
-                        <p class="mt-0.5 text-[11px] font-extrabold ${row.ingresoNeto >= 0 ? "text-slate-900" : "text-red-600"}">${formatCurrency(row.ingresoNeto)}</p>
-                    </div>
-                </div>
-                <p class="mt-1 text-[9px] leading-4 text-slate-500">Hum ${formatDecimal(row.humidityEstimada, 1)}% · Merma ${formatDecimal(row.waitingLossPct, 2)}%</p>
             </div>
         `).join("");
 
         return `
             <div class="space-y-3">
+                <div class="grid gap-2 sm:grid-cols-3">${focusCards}</div>
                 <div class="flex flex-wrap gap-1.5">${legendItems}</div>
                 <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">${headers}</div>
                 <div class="calendar-month-scroll -mx-1 overflow-x-auto pb-1">
