@@ -213,8 +213,20 @@ document.addEventListener("DOMContentLoaded", () => {
         climateForecast: null,
         lastResult: null,
         temporalAnalysis: null,
-        selectedTemporalDayKey: null
+        selectedTemporalDayKey: null,
+        temporalRenderQueued: false
     };
+
+    const isMobileViewport = () => window.matchMedia("(max-width: 767px)").matches;
+
+    function scheduleLowPriorityTask(task) {
+        if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(() => task(), { timeout: 250 });
+            return;
+        }
+
+        window.setTimeout(task, 0);
+    }
 
     const fieldIds = [
         "lote",
@@ -297,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const lastResult = readLastScenario();
 
         if (lastResult) {
-            renderResults(lastResult);
+            renderResults(lastResult, { deferAnalysis: true });
             if (hasValidCoordinates(lastResult.latitud, lastResult.longitud)) {
                 fetchClimate({ latitud: lastResult.latitud, longitud: lastResult.longitud }, { includeDaily: true });
             } else {
@@ -1531,7 +1543,6 @@ document.addEventListener("DOMContentLoaded", () => {
         clearInvalidState();
 
         const result = calculateScenario(form);
-        renderResults(result);
         writeJson(STORAGE_KEYS.lastResult, result);
 
         if (saveToHistory) {
@@ -1546,6 +1557,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return result;
         }
 
+        renderResults(result, { deferAnalysis: isMobileViewport() });
         showStatus(saveToHistory ? "Escenario guardado en el historial." : "Simulación actualizada.", "success");
 
         return result;
@@ -1784,7 +1796,8 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    function renderResults(result) {
+    function renderResults(result, options = {}) {
+        const { deferAnalysis = false } = options;
         state.lastResult = result;
         writeJson(STORAGE_KEYS.lastResult, result);
 
@@ -1817,6 +1830,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (elements.recomendacion) {
             elements.recomendacion.textContent = result.recommendationText;
             elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
+        }
+
+        if (deferAnalysis) {
+            resetTemporalPanel("Cargando análisis del dashboard...");
+            resetAlertsPanel("Cargando alertas...");
+            scheduleTemporalRender();
+            return;
         }
 
         renderTemporalAnalysis(result);
@@ -2250,6 +2270,23 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.temporalLista.innerHTML = buildTemporalCalendarMarkup(analysis, selectedRow.key);
         renderTemporalSelectionSummary(selectedRow, analysis);
         renderTemporalChart(analysis.today, selectedRow);
+    }
+
+    function scheduleTemporalRender() {
+        if (state.temporalRenderQueued) {
+            return;
+        }
+
+        state.temporalRenderQueued = true;
+        scheduleLowPriorityTask(() => {
+            state.temporalRenderQueued = false;
+            if (!state.lastResult) {
+                return;
+            }
+
+            renderTemporalAnalysis(state.lastResult);
+            renderAlerts(state.lastResult);
+        });
     }
 
     function resetTemporalPanel(message) {
@@ -3065,7 +3102,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        renderResults(entry);
+        renderResults(entry, { deferAnalysis: isMobileViewport() });
         updateClimateLocationLabel(entry.latitud, entry.longitud);
         if (hasValidCoordinates(entry.latitud, entry.longitud)) {
             fetchClimate({ latitud: entry.latitud, longitud: entry.longitud }, { includeDaily: true });
@@ -3243,7 +3280,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderClimatePageData(data, coordinates);
                 }
 
-                renderTemporalAnalysis(state.lastResult);
+                scheduleTemporalRender();
             })
             .catch(() => {
                 state.climate = null;
@@ -3261,7 +3298,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderClimateError();
                 }
 
-                renderTemporalAnalysis(state.lastResult);
+                scheduleTemporalRender();
             });
     }
 
