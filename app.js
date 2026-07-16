@@ -2765,6 +2765,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const dayCells = analysis.rows.map((row) => {
             const isSelected = row.key === selectedKey;
+            const humidityTone = row.humidityGap <= 0.5
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : row.humidityGap <= 2
+                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                    : "border-red-200 bg-red-50 text-red-800";
             return `
             <button type="button" data-day-key="${row.key}" class="temporal-day-cell aspect-square min-h-0 rounded-3xl border p-3 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
                 <div class="flex h-full flex-col justify-between gap-2 overflow-hidden">
@@ -2778,14 +2783,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold ${statePalette[row.state].badge}">${row.stateLabel}</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between gap-2">
-                        <div>
+                    <div class="grid grid-cols-[1fr_auto] items-center gap-2">
+                        <div class="min-w-0">
                             <p class="text-xl leading-none">${row.weatherIcon}</p>
                             <p class="mt-0.5 truncate text-[10px] font-semibold text-slate-600">${row.weatherLabel}</p>
                         </div>
-                        <div class="text-right">
-                            <p class="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Hum</p>
-                            <p class="mt-0.5 text-sm font-extrabold text-slate-700">${formatDecimal(row.humidityEstimada, 1)}%</p>
+                        <div class="rounded-2xl border px-2.5 py-1.5 text-center ${humidityTone}">
+                            <p class="text-[9px] font-bold uppercase tracking-[0.18em] opacity-70">Humedad</p>
+                            <p class="mt-0.5 text-sm font-extrabold leading-none">${formatDecimal(row.humidityEstimada, 1)}%</p>
                         </div>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-[10px] text-slate-500">
