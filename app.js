@@ -2703,12 +2703,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function buildTemporalCalendarMarkup(analysis, selectedKey = null) {
-        const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
-        const startOffset = (analysis.today.date.getDay() + 6) % 7;
-        const emptyCells = Array.from({ length: startOffset }, () => `
-            <div class="aspect-square min-h-0 rounded-2xl border border-dashed border-slate-200 bg-white/60"></div>
-        `).join("");
-
         const statePalette = {
             cosechar: {
                 cell: "border-emerald-200 bg-emerald-50/90",
@@ -2765,10 +2759,6 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `).join("");
 
-        const headers = weekdayLabels.map((label) => `
-            <div class="pb-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">${label}</div>
-        `).join("");
-
         const dayCells = analysis.rows.map((row) => {
             const isSelected = row.key === selectedKey;
             const forecastHumidity = Number.isFinite(row.forecastHumidity) ? row.forecastHumidity : NaN;
@@ -2779,27 +2769,51 @@ document.addEventListener("DOMContentLoaded", () => {
                         ? "border-cyan-200 bg-cyan-50 text-cyan-800"
                         : "border-emerald-200 bg-emerald-50 text-emerald-800")
                 : "border-slate-200 bg-slate-50 text-slate-500";
+            const rainChance = Number.isFinite(row.precipitationChance) ? `${formatDecimal(row.precipitationChance, 0)}%` : "--";
+            const rainSum = Number.isFinite(row.precipitationSum) ? `${formatDecimal(row.precipitationSum, 1)} mm` : "--";
+            const tempMax = Number.isFinite(row.tempMax) ? `${formatDecimal(row.tempMax, 0)}°` : "--";
+            const tempMin = Number.isFinite(row.tempMin) ? `${formatDecimal(row.tempMin, 0)}°` : "--";
             return `
-            <button type="button" data-day-key="${row.key}" class="temporal-day-cell aspect-square min-h-0 rounded-3xl border p-3 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
+            <button type="button" data-day-key="${row.key}" class="temporal-day-cell h-[16.5rem] min-w-[9.25rem] rounded-[1.6rem] border p-3 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
                 <div class="flex h-full flex-col justify-between gap-2 overflow-hidden">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">${row.dayLabel}</p>
-                            <p class="mt-0.5 text-base font-extrabold text-slate-900">${row.dayNumber}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">${row.dayLabel}</p>
+                            <p class="mt-1 text-2xl font-extrabold leading-none text-slate-900">${row.dayNumber}</p>
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             ${row.isProjected ? `<span class="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">Proy</span>` : ""}
                             <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold ${statePalette[row.state].badge}">${row.stateLabel}</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-                        <div class="min-w-0">
-                            <p class="text-xl leading-none">${row.weatherIcon}</p>
-                            <p class="mt-0.5 truncate text-[10px] font-semibold text-slate-600">${row.weatherLabel}</p>
+                    <div class="rounded-2xl border border-white/70 bg-white/80 p-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.06)]">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-3xl leading-none">${row.weatherIcon}</p>
+                                <p class="mt-1 truncate text-[10px] font-semibold text-slate-600">${row.weatherLabel}</p>
+                            </div>
+                            <div class="rounded-2xl border px-2.5 py-1.5 text-center ${humidityTone}">
+                                <p class="text-[8px] font-bold uppercase tracking-[0.18em] opacity-70">Humedad</p>
+                                <p class="mt-0.5 text-sm font-extrabold leading-none">${Number.isFinite(forecastHumidity) ? `${formatDecimal(forecastHumidity, 0)}%` : "--"}</p>
+                            </div>
                         </div>
-                        <div class="rounded-2xl border px-2.5 py-1.5 text-center ${humidityTone}">
-                            <p class="text-[9px] font-bold uppercase tracking-[0.18em] opacity-70">Humedad aire</p>
-                            <p class="mt-0.5 text-sm font-extrabold leading-none">${Number.isFinite(forecastHumidity) ? `${formatDecimal(forecastHumidity, 0)}%` : "--"}</p>
+                        <div class="mt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-500">
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-2 py-1.5">
+                                <p class="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">Lluvia</p>
+                                <p class="mt-0.5 font-semibold text-slate-700">${rainChance}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-2 py-1.5">
+                                <p class="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">Precip</p>
+                                <p class="mt-0.5 font-semibold text-slate-700">${rainSum}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-2 py-1.5">
+                                <p class="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">Max</p>
+                                <p class="mt-0.5 font-semibold text-slate-700">${tempMax}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50/80 px-2 py-1.5">
+                                <p class="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-400">Min</p>
+                                <p class="mt-0.5 font-semibold text-slate-700">${tempMin}</p>
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-[10px] text-slate-500">
@@ -2814,11 +2828,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="space-y-3">
                 <div class="grid gap-2 sm:grid-cols-3">${focusCards}</div>
                 <div class="flex flex-wrap gap-1.5">${legendItems}</div>
-                <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">${headers}</div>
-                <div class="calendar-month-scroll -mx-1 overflow-x-auto pb-1">
-                    <div class="calendar-month-grid min-w-[720px] px-2 sm:min-w-0">
-                        <div class="mt-2 grid grid-cols-7 gap-2 sm:gap-2.5">
-                            ${emptyCells}
+                <div class="calendar-month-scroll -mx-1 overflow-x-auto pb-2">
+                    <div class="calendar-month-grid min-w-[1040px] px-2 sm:min-w-0">
+                        <div class="flex gap-2">
                             ${dayCells}
                         </div>
                     </div>
