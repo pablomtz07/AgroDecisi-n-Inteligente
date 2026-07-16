@@ -39,43 +39,50 @@
         </div>
     </header>
 
-    <div class="mx-auto flex max-w-7xl gap-6 px-4 py-6 pb-40 sm:px-6 md:pb-6 lg:px-8">
-        <aside class="hidden w-72 shrink-0 flex-col justify-between rounded-[2rem] border border-slate-200 bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur md:flex lg:sticky lg:top-24 lg:self-start">
-            <div>
-                <h2 class="mb-6 text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Navegación</h2>
-                <nav class="space-y-2">
-                    <button type="button" id="btnMenuDashboard" data-scroll-to="form-section" data-active="true" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-green-700 transition-all">
-                        <span aria-hidden="true">🧾</span>
-                        Carga de datos
-                    </button>
-                    <a href="dashboard.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                        <span aria-hidden="true">📊</span>
-                        Dashboard
-                    </a>
-                    <a href="clima.html" id="btnMenuClima" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                        <span aria-hidden="true">🌦️</span>
-                        Clima Avanzado
-                    </a>
-                    <a href="mapa.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                        <span aria-hidden="true">🗺️</span>
-                        Ubicación / Mapa
-                    </a>
-                    <a href="history.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                        <span aria-hidden="true">📚</span>
-                        Historial
-                    </a>
-                </nav>
-            </div>
+    <div class="mx-auto max-w-7xl px-4 py-6 pb-40 sm:px-6 md:pb-6 lg:px-8">
+        <div class="nav-drawer hidden lg:block">
+            <button type="button" class="nav-drawer-trigger" aria-label="Abrir navegación" title="Abrir navegación">
+                <span aria-hidden="true">☰</span>
+                <span class="sr-only">Abrir navegación</span>
+            </button>
 
-            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                <p class="font-semibold text-slate-700">Consejo rápido</p>
-                <p class="mt-2">
-                    Calculá el escenario, guardalo y compará cómo cambia el margen según humedad, secada y flete.
-                </p>
-            </div>
-        </aside>
+            <aside class="nav-drawer-panel rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+                <div>
+                    <h2 class="mb-6 text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Navegación</h2>
+                    <nav class="space-y-2">
+                        <button type="button" id="btnMenuDashboard" data-scroll-to="form-section" data-active="true" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-green-700 transition-all">
+                            <span aria-hidden="true">🧾</span>
+                            Carga de datos
+                        </button>
+                        <a href="dashboard.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                            <span aria-hidden="true">📊</span>
+                            Dashboard
+                        </a>
+                        <a href="clima.html" id="btnMenuClima" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                            <span aria-hidden="true">🌦️</span>
+                            Clima Avanzado
+                        </a>
+                        <a href="mapa.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                            <span aria-hidden="true">🗺️</span>
+                            Ubicación / Mapa
+                        </a>
+                        <a href="history.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
+                            <span aria-hidden="true">📚</span>
+                            Historial
+                        </a>
+                    </nav>
+                </div>
 
-        <main class="min-w-0 flex-1 space-y-5">
+                <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                    <p class="font-semibold text-slate-700">Consejo rápido</p>
+                    <p class="mt-2">
+                        Calculá el escenario, guardalo y compará cómo cambia el margen según humedad, secada y flete.
+                    </p>
+                </div>
+            </aside>
+        </div>
+
+        <main class="space-y-5">
             <nav class="fixed inset-x-3 bottom-3 z-50 rounded-[1.6rem] border border-slate-200/70 bg-white/95 p-2 shadow-2xl shadow-slate-300/40 backdrop-blur md:hidden" aria-label="Navegación móvil">
                 <div class="grid grid-cols-4 gap-2">
                     <button type="button" data-scroll-to="form-section" data-active="true" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-green-700">

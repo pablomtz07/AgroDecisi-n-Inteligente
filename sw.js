@@ -1,4 +1,4 @@
-const CACHE_NAME = "cosecha-shell-v21";
+const CACHE_NAME = "cosecha-shell-v22";
 const PRECACHE_URLS = [
     "/login.html",
     "/index.html",
