@@ -132,12 +132,14 @@ table tbody tr:hover {
 
 @media (min-width: 1280px) {
     .dashboard-screen {
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
     .dashboard-screen #dashboardPage {
-        height: calc(100vh - 5.25rem);
-        overflow: hidden;
+        height: auto;
+        min-height: calc(100vh - 5.25rem);
+        overflow: visible;
     }
 }
 
