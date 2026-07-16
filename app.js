@@ -1817,7 +1817,6 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
         }
 
-        renderChart(result);
         renderTemporalAnalysis(result);
         renderAlerts(result);
     }
@@ -2036,15 +2035,16 @@ document.addEventListener("DOMContentLoaded", () => {
             data: {
                 labels: ["Bruto", "Secada", "Flete", "Neto"],
                 datasets: [{
+                    label: "Escenario actual",
                     data: [
                         result?.ingresoBruto ?? 0,
                         result?.costoTotalSecada ?? 0,
                         result?.costoTotalFlete ?? 0,
                         result?.ingresoNeto ?? 0
                     ],
-                    borderColor: (result?.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626",
-                    backgroundColor: (result?.ingresoNeto ?? 0) >= 0 ? "rgba(37, 99, 235, 0.14)" : "rgba(220, 38, 38, 0.14)",
-                    pointBackgroundColor: ["#16a34a", "#f97316", "#0f766e", (result?.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"],
+                    borderColor: "#2563eb",
+                    backgroundColor: "rgba(37, 99, 235, 0.12)",
+                    pointBackgroundColor: "#2563eb",
                     pointBorderColor: "#ffffff",
                     pointBorderWidth: 2,
                     pointRadius: 5,
@@ -2081,12 +2081,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function renderTemporalChart(selectedRow, baseResult = null) {
+    function renderTemporalChart(todayRow, selectedRow) {
         if (!elements.graficoRentabilidad) {
             return;
         }
 
-        if (!selectedRow && !baseResult) {
+        if (!todayRow && !selectedRow) {
             clearChart();
             return;
         }
@@ -2100,27 +2100,49 @@ document.addEventListener("DOMContentLoaded", () => {
             state.chart.destroy();
         }
 
-        const bars = selectedRow ?? {
-            ingresoBruto: baseResult?.ingresoBruto ?? 0,
-            costoSecada: baseResult?.costoTotalSecada ?? 0,
-            costoFlete: baseResult?.costoTotalFlete ?? 0,
-            ingresoNeto: baseResult?.ingresoNeto ?? 0
-        };
+        const baseline = todayRow ?? selectedRow;
+        const selected = selectedRow ?? todayRow;
+
+        const todayValues = baseline ? [
+            baseline.ingresoBruto ?? 0,
+            baseline.costoSecada ?? baseline.costoTotalSecada ?? 0,
+            baseline.costoFlete ?? baseline.costoTotalFlete ?? 0,
+            baseline.ingresoNeto ?? 0
+        ] : [0, 0, 0, 0];
+
+        const selectedValues = selected ? [
+            selected.ingresoBruto ?? 0,
+            selected.costoSecada ?? selected.costoTotalSecada ?? 0,
+            selected.costoFlete ?? selected.costoTotalFlete ?? 0,
+            selected.ingresoNeto ?? 0
+        ] : [0, 0, 0, 0];
+
+        const selectedNet = selected?.ingresoNeto ?? 0;
+        const todayNet = baseline?.ingresoNeto ?? 0;
 
         state.chart = new Chart(context, {
             type: "line",
             data: {
                 labels: ["Bruto", "Secada", "Flete", "Neto"],
                 datasets: [{
-                    data: [
-                        bars.ingresoBruto ?? 0,
-                        bars.costoSecada ?? 0,
-                        bars.costoFlete ?? 0,
-                        bars.ingresoNeto ?? 0
-                    ],
-                    borderColor: (bars.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626",
-                    backgroundColor: (bars.ingresoNeto ?? 0) >= 0 ? "rgba(37, 99, 235, 0.14)" : "rgba(220, 38, 38, 0.14)",
-                    pointBackgroundColor: ["#16a34a", "#f97316", "#0f766e", (bars.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"],
+                    label: "Hoy",
+                    data: todayValues,
+                    borderColor: "#16a34a",
+                    backgroundColor: "rgba(22, 163, 74, 0.08)",
+                    pointBackgroundColor: "#16a34a",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: false,
+                    tension: 0.35,
+                    borderWidth: 3
+                }, {
+                    label: "Día elegido",
+                    data: selectedValues,
+                    borderColor: selectedNet >= todayNet ? "#2563eb" : "#dc2626",
+                    backgroundColor: selectedNet >= todayNet ? "rgba(37, 99, 235, 0.14)" : "rgba(220, 38, 38, 0.14)",
+                    pointBackgroundColor: ["#2563eb", "#f97316", "#0f766e", selectedNet >= todayNet ? "#2563eb" : "#dc2626"],
                     pointBorderColor: "#ffffff",
                     pointBorderWidth: 2,
                     pointRadius: 5,
@@ -2134,7 +2156,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: true,
+                        position: "top",
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 10
+                        }
+                    },
                     tooltip: {
                         callbacks: {
                             label: (tooltipItem) => ` ${formatCurrency(tooltipItem.parsed.y)}`
@@ -2219,7 +2249,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.temporalLista.className = "mt-3";
         elements.temporalLista.innerHTML = buildTemporalCalendarMarkup(analysis, selectedRow.key);
         renderTemporalSelectionSummary(selectedRow, analysis);
-        renderTemporalChart(selectedRow);
+        renderTemporalChart(analysis.today, selectedRow);
     }
 
     function resetTemporalPanel(message) {
@@ -2384,11 +2414,20 @@ document.addEventListener("DOMContentLoaded", () => {
             return [];
         }
 
+        const todayKey = toDateKey(new Date());
+        let startIndex = times.findIndex((time) => time === todayKey);
+        if (startIndex < 0) {
+            startIndex = times.findIndex((time) => time >= todayKey);
+        }
+        if (startIndex < 0) {
+            startIndex = Math.max(0, times.length - horizonDays);
+        }
+
         const series = [];
         let previous = null;
 
         for (let index = 0; index < horizonDays; index += 1) {
-            const forecast = buildTemporalForecastDay(daily, times, index, previous);
+            const forecast = buildTemporalForecastDay(daily, times, startIndex + index, previous);
             series.push(forecast);
             previous = forecast;
         }
@@ -2403,7 +2442,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const precipitationSum = parseNumber(daily.precipitation_sum?.[index]);
             const tempMax = parseNumber(daily.temperature_2m_max?.[index]);
             const tempMin = parseNumber(daily.temperature_2m_min?.[index]);
-            const date = new Date(`${times[index]}T00:00:00`);
+            const date = new Date(`${times[index]}T12:00:00`);
 
             return {
                 date,
@@ -2418,7 +2457,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const last = previous ?? {
-            date: new Date(`${times[times.length - 1]}T00:00:00`),
+            date: new Date(`${times[times.length - 1]}T12:00:00`),
             weatherCode: 3,
             precipitationChance: 20,
             precipitationSum: 0,
@@ -3344,7 +3383,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const max = parseNumber(daily.temperature_2m_max?.[index]);
             const min = parseNumber(daily.temperature_2m_min?.[index]);
             const rain = parseNumber(daily.precipitation_probability_max?.[index]);
-            const date = new Date(`${time}T00:00:00`);
+            const date = new Date(`${time}T12:00:00`);
             const label = date.toLocaleDateString("es-AR", { weekday: "short" });
 
             return `
@@ -3383,7 +3422,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const dayCells = [];
         for (let day = 1; day <= daysInMonth; day += 1) {
-            const date = new Date(baseDate.getFullYear(), baseDate.getMonth(), day);
+            const date = new Date(baseDate.getFullYear(), baseDate.getMonth(), day, 12, 0, 0);
             const key = toDateKey(date);
             const record = lookup.get(key);
             const weather = record ? getWeatherMeta(record.weatherCode) : { icon: "-", label: "Sin dato" };
