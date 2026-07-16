@@ -2100,56 +2100,33 @@ document.addEventListener("DOMContentLoaded", () => {
             state.chart.destroy();
         }
 
-        const baseline = todayRow ?? selectedRow;
-        const selected = selectedRow ?? todayRow;
-
-        const todayValues = baseline ? [
-            baseline.ingresoBruto ?? 0,
-            baseline.costoSecada ?? baseline.costoTotalSecada ?? 0,
-            baseline.costoFlete ?? baseline.costoTotalFlete ?? 0,
-            baseline.ingresoNeto ?? 0
-        ] : [0, 0, 0, 0];
-
-        const selectedValues = selected ? [
-            selected.ingresoBruto ?? 0,
-            selected.costoSecada ?? selected.costoTotalSecada ?? 0,
-            selected.costoFlete ?? selected.costoTotalFlete ?? 0,
-            selected.ingresoNeto ?? 0
-        ] : [0, 0, 0, 0];
-
-        const selectedNet = selected?.ingresoNeto ?? 0;
-        const todayNet = baseline?.ingresoNeto ?? 0;
+        const todayNet = todayRow?.ingresoNeto ?? 0;
+        const selectedNet = selectedRow?.ingresoNeto ?? todayNet;
+        const isImprovement = selectedNet >= todayNet;
+        const chartColor = isImprovement ? "#2563eb" : "#dc2626";
+        const selectedLabel = selectedRow?.dayLabel ?? "Día elegido";
+        const chartHeight = elements.graficoRentabilidad.height || 240;
+        const gradient = context.createLinearGradient(0, 0, 0, chartHeight);
+        gradient.addColorStop(0, isImprovement ? "rgba(37, 99, 235, 0.35)" : "rgba(220, 38, 38, 0.35)");
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0.05)");
 
         state.chart = new Chart(context, {
             type: "line",
             data: {
-                labels: ["Bruto", "Secada", "Flete", "Neto"],
+                labels: ["Hoy", "Día elegido"],
                 datasets: [{
-                    label: "Hoy",
-                    data: todayValues,
-                    borderColor: "#16a34a",
-                    backgroundColor: "rgba(22, 163, 74, 0.08)",
-                    pointBackgroundColor: "#16a34a",
+                    label: "Margen neto",
+                    data: [todayNet, selectedNet],
+                    borderColor: chartColor,
+                    backgroundColor: gradient,
+                    pointBackgroundColor: ["#16a34a", chartColor],
                     pointBorderColor: "#ffffff",
                     pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    fill: false,
-                    tension: 0.35,
-                    borderWidth: 3
-                }, {
-                    label: "Día elegido",
-                    data: selectedValues,
-                    borderColor: selectedNet >= todayNet ? "#2563eb" : "#dc2626",
-                    backgroundColor: selectedNet >= todayNet ? "rgba(37, 99, 235, 0.14)" : "rgba(220, 38, 38, 0.14)",
-                    pointBackgroundColor: ["#2563eb", "#f97316", "#0f766e", selectedNet >= todayNet ? "#2563eb" : "#dc2626"],
-                    pointBorderColor: "#ffffff",
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
+                    pointRadius: [7, 8],
                     pointHoverRadius: 7,
                     fill: true,
-                    tension: 0.35,
-                    borderWidth: 3
+                    tension: 0.25,
+                    borderWidth: 4
                 }]
             },
             options: {
@@ -2157,28 +2134,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: true,
-                        position: "top",
-                        labels: {
-                            usePointStyle: true,
-                            boxWidth: 10,
-                            boxHeight: 10
-                        }
+                        display: false
                     },
                     tooltip: {
                         callbacks: {
-                            label: (tooltipItem) => ` ${formatCurrency(tooltipItem.parsed.y)}`
+                            label: (tooltipItem) => {
+                                const currentIndex = tooltipItem.dataIndex;
+                                const value = formatCurrency(tooltipItem.parsed.y);
+                                if (currentIndex === 0) {
+                                    return ` Hoy: ${value}`;
+                                }
+
+                                const delta = selectedNet - todayNet;
+                                return ` ${selectedLabel}: ${value} (${formatSignedCurrency(delta)})`;
+                            }
                         }
                     }
                 },
                 scales: {
                     x: {
-                        grid: { display: false }
+                        grid: { display: false },
+                        ticks: {
+                            color: "#64748b",
+                            font: {
+                                weight: "700"
+                            }
+                        }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: "#e2e8f0" },
+                        grid: { color: "rgba(148, 163, 184, 0.22)" },
                         ticks: {
+                            color: "#64748b",
                             callback: (value) => `$ ${formatCompactNumber(value)}`
                         }
                     }
