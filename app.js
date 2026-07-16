@@ -2363,6 +2363,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 weatherCode: forecast.weatherCode,
                 precipitationChance: forecast.precipitationChance,
                 precipitationSum: forecast.precipitationSum,
+                forecastHumidity: forecast.forecastHumidity,
                 tempMax: forecast.tempMax,
                 tempMin: forecast.tempMin,
                 source: forecast.source,
@@ -2440,6 +2441,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const weatherCode = parseNumber(daily.weather_code?.[index]);
             const precipitationChance = parseNumber(daily.precipitation_probability_max?.[index]);
             const precipitationSum = parseNumber(daily.precipitation_sum?.[index]);
+            const forecastHumidity = parseNumber(daily.relative_humidity_2m_mean?.[index]);
             const tempMax = parseNumber(daily.temperature_2m_max?.[index]);
             const tempMin = parseNumber(daily.temperature_2m_min?.[index]);
             const date = new Date(`${times[index]}T12:00:00`);
@@ -2449,6 +2451,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 weatherCode,
                 precipitationChance,
                 precipitationSum,
+                forecastHumidity,
                 tempMax,
                 tempMin,
                 weather: getWeatherMeta(weatherCode),
@@ -2461,6 +2464,7 @@ document.addEventListener("DOMContentLoaded", () => {
             weatherCode: 3,
             precipitationChance: 20,
             precipitationSum: 0,
+            forecastHumidity: 60,
             tempMax: 24,
             tempMin: 12,
             weather: getWeatherMeta(3),
@@ -2469,12 +2473,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const projectedDays = index - times.length + 1;
         const rainHeavy = isWetWeather(last);
         const weatherCode = rainHeavy ? 3 : (Number.isFinite(last.weatherCode) ? last.weatherCode : 2);
+        const forecastHumidity = clampNumber((Number.isFinite(last.forecastHumidity) ? last.forecastHumidity : 60) + (rainHeavy ? 4 : -1.2), 0, 100);
 
         return {
             date: addDays(last.date, 1),
             weatherCode,
             precipitationChance: clampNumber((last.precipitationChance ?? 20) * 0.9 + (rainHeavy ? 8 : 0), 0, 100),
             precipitationSum: clampNumber((last.precipitationSum ?? 0) * 0.78, 0, 30),
+            forecastHumidity,
             tempMax: clampNumber((last.tempMax ?? 24) - (0.05 * projectedDays), -5, 45),
             tempMin: clampNumber((last.tempMin ?? 12) - (0.03 * projectedDays), -10, 35),
             weather: getWeatherMeta(weatherCode),
@@ -2765,11 +2771,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const dayCells = analysis.rows.map((row) => {
             const isSelected = row.key === selectedKey;
-            const humidityTone = row.humidityGap <= 0.5
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : row.humidityGap <= 2
-                    ? "border-amber-200 bg-amber-50 text-amber-800"
-                    : "border-red-200 bg-red-50 text-red-800";
+            const forecastHumidity = Number.isFinite(row.forecastHumidity) ? row.forecastHumidity : NaN;
+            const humidityTone = Number.isFinite(forecastHumidity)
+                ? (forecastHumidity >= 75
+                    ? "border-blue-200 bg-blue-50 text-blue-800"
+                    : forecastHumidity >= 55
+                        ? "border-cyan-200 bg-cyan-50 text-cyan-800"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-800")
+                : "border-slate-200 bg-slate-50 text-slate-500";
             return `
             <button type="button" data-day-key="${row.key}" class="temporal-day-cell aspect-square min-h-0 rounded-3xl border p-3 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
                 <div class="flex h-full flex-col justify-between gap-2 overflow-hidden">
@@ -2789,8 +2798,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <p class="mt-0.5 truncate text-[10px] font-semibold text-slate-600">${row.weatherLabel}</p>
                         </div>
                         <div class="rounded-2xl border px-2.5 py-1.5 text-center ${humidityTone}">
-                            <p class="text-[9px] font-bold uppercase tracking-[0.18em] opacity-70">Humedad</p>
-                            <p class="mt-0.5 text-sm font-extrabold leading-none">${formatDecimal(row.humidityEstimada, 1)}%</p>
+                            <p class="text-[9px] font-bold uppercase tracking-[0.18em] opacity-70">Humedad aire</p>
+                            <p class="mt-0.5 text-sm font-extrabold leading-none">${Number.isFinite(forecastHumidity) ? `${formatDecimal(forecastHumidity, 0)}%` : "--"}</p>
                         </div>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-[10px] text-slate-500">
@@ -3167,7 +3176,7 @@ document.addEventListener("DOMContentLoaded", () => {
         url.searchParams.set("current", "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation");
 
         if (includeDaily || renderClimatePage) {
-            url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,weather_code");
+            url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,relative_humidity_2m_mean,weather_code");
             url.searchParams.set("past_days", "31");
             url.searchParams.set("forecast_days", "16");
         }
