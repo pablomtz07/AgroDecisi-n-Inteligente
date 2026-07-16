@@ -145,6 +145,8 @@ document.addEventListener("DOMContentLoaded", () => {
         temporalDiferenciaDetalle: $("temporalDiferenciaDetalle"),
         temporalHumedad: $("temporalHumedad"),
         temporalHumedadDetalle: $("temporalHumedadDetalle"),
+        temporalRiesgo: $("temporalRiesgo"),
+        temporalRiesgoDetalle: $("temporalRiesgoDetalle"),
         temporalLista: $("temporalLista"),
         temporalSelectedDayLabel: $("temporalSelectedDayLabel"),
         temporalSelectedState: $("temporalSelectedState"),
@@ -2235,7 +2237,14 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.temporalDiferencia.className = `mt-1 text-lg font-extrabold ${best.ingresoNeto - today.ingresoNeto >= 0 ? "text-emerald-700" : "text-red-600"}`;
         elements.temporalDiferenciaDetalle.textContent = recommendation.deltaDetail(threshold);
         elements.temporalHumedad.textContent = `${formatDecimal(best.humidityEstimada, 1)}%`;
-        elements.temporalHumedadDetalle.textContent = analysis.summary;
+        elements.temporalHumedadDetalle.textContent = `La mejor ventana aparece con ${formatDecimal(best.precipitationChance, 0)}% de lluvia y ${formatDecimal(best.precipitationSum, 1)} mm esperados.`;
+        if (elements.temporalRiesgo) {
+            elements.temporalRiesgo.textContent = best.riskLabel;
+            elements.temporalRiesgo.className = `mt-1 text-sm font-extrabold ${best.riskToneText}`;
+        }
+        if (elements.temporalRiesgoDetalle) {
+            elements.temporalRiesgoDetalle.textContent = `${best.weatherLabel} · ${best.stateDetail}`;
+        }
 
         elements.temporalLista.className = "mt-3";
         elements.temporalLista.innerHTML = buildTemporalCalendarMarkup(analysis, selectedRow.key);
@@ -2271,6 +2280,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (elements.temporalHumedadDetalle) {
             elements.temporalHumedadDetalle.textContent = "Sin cálculo aún.";
+        }
+        if (elements.temporalRiesgo) {
+            elements.temporalRiesgo.textContent = "---";
+            elements.temporalRiesgo.className = "mt-1 text-sm font-extrabold text-slate-900";
+        }
+        if (elements.temporalRiesgoDetalle) {
+            elements.temporalRiesgoDetalle.textContent = "Sin lectura aún.";
         }
         if (elements.temporalLista) {
             elements.temporalLista.className = "mt-3";
@@ -2395,7 +2411,7 @@ document.addEventListener("DOMContentLoaded", () => {
             threshold,
             recommendation,
             projectedDays,
-            summary: `Calendario de ${rows.length} dias con humedad, merma y clima. ${projectedDays > 0 ? `Los ultimos ${projectedDays} dias son proyeccion.` : "Todo el horizonte entra dentro del pronostico real."}`,
+            summary: `Simulamos ${rows.length} dias cruzando clima, humedad, merma y costo operativo. Tocá una fecha para ver si conviene cosechar, esperar o frenar. ${projectedDays > 0 ? `Los ultimos ${projectedDays} dias son proyeccion.` : "Todo el horizonte entra dentro del pronostico real."}`,
             counts
         };
     }
@@ -2584,8 +2600,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return {
                 stateLabel: "Cosechar hoy",
                 stateTone: "border-emerald-200 bg-emerald-100 text-emerald-800",
-                summary: `Hoy sigue siendo la mejor ventana. ${projectedDays > 0 ? `Hay ${projectedDays} dias proyectados al final del horizonte.` : "Todo el horizonte esta cubierto por pronostico real."}`,
-                deltaDetail: () => `Esperar no mejora el margen en forma clara. Umbral de lectura: ${formatCurrency(threshold)}.`
+                summary: "Hoy conviene entrar. Es la ventana más sólida para arrancar la cosecha.",
+                deltaDetail: () => `Esperar no mejora el resultado de forma clara. Umbral de lectura: ${formatCurrency(threshold)}. ${projectedDays > 0 ? `Hay ${projectedDays} dias proyectados al final del horizonte.` : "Todo el horizonte esta cubierto por pronostico real."}`
             };
         }
 
@@ -2602,7 +2618,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return {
                 stateLabel: "Esperar",
                 stateTone: "border-sky-200 bg-sky-100 text-sky-800",
-                summary: `La mejor ventana aparece ${formatTemporalDateLabel(best.date)}. Esperar podria mejorar el resultado.`,
+                summary: `La mejor ventana aparece ${formatTemporalDateLabel(best.date)}. Esperar podría mejorar el margen y dar una entrada más cómoda.`,
                 deltaDetail: (limit) => `La mejora supera el umbral de referencia de ${formatCurrency(limit)}.`
             };
         }
