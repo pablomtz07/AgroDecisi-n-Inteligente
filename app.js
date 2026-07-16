@@ -2725,12 +2725,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const dayCells = analysis.rows.map((row) => {
             const isSelected = row.key === selectedKey;
             return `
-            <button type="button" data-day-key="${row.key}" class="temporal-day-cell aspect-square min-h-0 rounded-2xl border p-2 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
+            <button type="button" data-day-key="${row.key}" class="temporal-day-cell aspect-square min-h-0 rounded-3xl border p-3 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
                 <div class="flex h-full flex-col justify-between gap-2 overflow-hidden">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <p class="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">${row.dayLabel}</p>
-                            <p class="mt-0.5 text-sm font-extrabold text-slate-900">${row.dayNumber}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">${row.dayLabel}</p>
+                            <p class="mt-0.5 text-base font-extrabold text-slate-900">${row.dayNumber}</p>
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             ${row.isProjected ? `<span class="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-slate-400">Proy</span>` : ""}
@@ -2739,15 +2739,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-lg leading-none">${row.weatherIcon}</p>
-                            <p class="mt-0.5 truncate text-[9px] font-semibold text-slate-600">${row.weatherLabel}</p>
+                            <p class="text-xl leading-none">${row.weatherIcon}</p>
+                            <p class="mt-0.5 truncate text-[10px] font-semibold text-slate-600">${row.weatherLabel}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Hum</p>
-                            <p class="mt-0.5 text-[11px] font-extrabold text-slate-700">${formatDecimal(row.humidityEstimada, 1)}%</p>
+                            <p class="mt-0.5 text-sm font-extrabold text-slate-700">${formatDecimal(row.humidityEstimada, 1)}%</p>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between gap-2 text-[9px] text-slate-500">
+                    <div class="flex items-center justify-between gap-2 text-[10px] text-slate-500">
                         <span class="truncate">${row.isBest ? "Mejor" : row.index === 0 ? "Hoy" : " "}</span>
                         <span class="font-semibold ${row.ingresoNeto >= 0 ? "text-slate-700" : "text-red-600"}">${formatSignedCurrency(row.deltaVsToday)}</span>
                     </div>
@@ -2761,8 +2761,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="flex flex-wrap gap-1.5">${legendItems}</div>
                 <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">${headers}</div>
                 <div class="calendar-month-scroll -mx-1 overflow-x-auto pb-1">
-                    <div class="calendar-month-grid min-w-[560px] px-1 sm:min-w-0">
-                        <div class="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+                    <div class="calendar-month-grid min-w-[720px] px-2 sm:min-w-0">
+                        <div class="mt-2 grid grid-cols-7 gap-2 sm:gap-2.5">
                             ${emptyCells}
                             ${dayCells}
                         </div>

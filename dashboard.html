@@ -62,7 +62,7 @@
         </section>
 
         <section class="mt-4 grid gap-4 xl:grid-cols-12">
-            <div class="rounded-[2rem] border border-white/70 bg-white/85 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur xl:col-span-7">
+            <div class="rounded-[2rem] border border-white/70 bg-white/85 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur xl:col-span-4">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Grafico</p>
@@ -75,7 +75,7 @@
                         <span class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-blue-700">Neto</span>
                     </div>
                 </div>
-                <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
                     <div class="premium-panel rounded-[1.25rem] p-3">
                         <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Dia elegido</p>
                         <p id="temporalSelectedDayLabel" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
@@ -94,12 +94,12 @@
                         <p id="temporalSelectedDelta" class="mt-1 text-[11px] font-semibold text-slate-500">---</p>
                     </div>
                 </div>
-                <div class="mt-4 h-[18rem] rounded-[1.5rem] border border-slate-100 bg-gradient-to-b from-white to-slate-50 p-3">
+                <div class="mt-4 h-[15rem] rounded-[1.5rem] border border-slate-100 bg-gradient-to-b from-white to-slate-50 p-3">
                     <canvas id="graficoRentabilidad"></canvas>
                 </div>
             </div>
 
-            <div id="temporalPanel" class="rounded-[2rem] border border-white/70 bg-white/85 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur xl:col-span-5">
+            <div id="temporalPanel" class="rounded-[2rem] border border-white/70 bg-white/85 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur xl:col-span-8">
                 <div hidden>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-600">Analisis temporal</h3>
                     <p id="temporalResumen" class="mt-1 text-xs text-slate-600">Calcula un escenario para ver el calendario predictivo de 30 dias.</p>
@@ -186,6 +186,6 @@
     </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="app.js?v=20260716-3"></script>
+    <script src="app.js?v=20260716-4"></script>
 </body>
 </html>
