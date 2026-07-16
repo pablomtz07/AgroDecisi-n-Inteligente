@@ -141,7 +141,12 @@
                         <p class="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Calendario</p>
                         <h3 class="mt-1 text-base font-bold text-slate-900">Prediccion</h3>
                     </div>
-                    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">30 dias</span>
+                    <div class="flex items-center gap-2">
+                        <button id="btnCargarCalendario" type="button" class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 md:hidden">
+                            Cargar calendario
+                        </button>
+                        <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">30 dias</span>
+                    </div>
                 </div>
                 <div id="temporalLista" class="mt-4">
                     <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
@@ -179,6 +184,6 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="app.js?v=20260716-13"></script>
+    <script src="app.js?v=20260716-14"></script>
 </body>
 </html>

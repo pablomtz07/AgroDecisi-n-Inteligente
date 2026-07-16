@@ -148,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
         temporalRiesgo: $("temporalRiesgo"),
         temporalRiesgoDetalle: $("temporalRiesgoDetalle"),
         temporalLista: $("temporalLista"),
+        btnCargarCalendario: $("btnCargarCalendario"),
         temporalSelectedDayLabel: $("temporalSelectedDayLabel"),
         temporalSelectedState: $("temporalSelectedState"),
         temporalSelectedHumidity: $("temporalSelectedHumidity"),
@@ -311,13 +312,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (lastResult) {
             renderResults(lastResult, { deferAnalysis: true });
             if (hasValidCoordinates(lastResult.latitud, lastResult.longitud)) {
-                fetchClimate({ latitud: lastResult.latitud, longitud: lastResult.longitud }, { includeDaily: true });
+                fetchClimate(
+                    { latitud: lastResult.latitud, longitud: lastResult.longitud },
+                    { includeDaily: !isMobileViewport() }
+                );
             } else {
-                fetchClimate(null, { includeDaily: true });
+                fetchClimate(null, { includeDaily: !isMobileViewport() });
             }
         } else {
             resetResultsPanel("Cargá un escenario en Datos para ver resultados y predicción.");
-            fetchClimate(null, { includeDaily: true });
+            fetchClimate(null, { includeDaily: !isMobileViewport() });
         }
 
         setActiveNav("resumen-section");
@@ -407,6 +411,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             fetchClimate(null, { includeDaily: true, forceRender: true });
+        });
+
+        elements.btnCargarCalendario?.addEventListener("click", () => {
+            const lastResult = readLastScenario();
+            if (!lastResult) {
+                showStatus("Primero calculá un escenario para poder cargar el calendario.", "warning");
+                return;
+            }
+
+            showStatus("Cargando calendario completo...", "info");
+            if (hasValidCoordinates(lastResult.latitud, lastResult.longitud)) {
+                fetchClimate({ latitud: lastResult.latitud, longitud: lastResult.longitud }, { includeDaily: true, forceRender: true });
+            } else {
+                fetchClimate(null, { includeDaily: true, forceRender: true });
+            }
         });
 
         elements.temporalLista?.addEventListener("click", handleTemporalDaySelection);
@@ -1833,9 +1852,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (deferAnalysis) {
-            resetTemporalPanel("Cargando análisis del dashboard...");
+            resetTemporalPanel(isMobileViewport()
+                ? "Análisis resumido listo. Tocá el botón para cargar el calendario completo."
+                : "Cargando análisis del dashboard...");
             resetAlertsPanel("Cargando alertas...");
-            scheduleTemporalRender();
+            if (!isMobileViewport()) {
+                scheduleTemporalRender();
+            }
             return;
         }
 
@@ -3207,6 +3230,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const coordinates = getClimateCoordinates(overrideCoordinates);
         const renderDashboard = Boolean(elements.clima);
         const renderClimatePage = Boolean(elements.climaPanel);
+        const shouldRenderDailyDashboard = includeDaily || renderClimatePage;
 
         updateClimateLocationLabel(coordinates.latitud, coordinates.longitud);
         if (isEntryPage || isClimatePage) {
@@ -3231,7 +3255,7 @@ document.addEventListener("DOMContentLoaded", () => {
         url.searchParams.set("timezone", "auto");
         url.searchParams.set("current", "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation");
 
-        if (includeDaily || renderClimatePage) {
+        if (shouldRenderDailyDashboard) {
             url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,relative_humidity_2m_mean,weather_code");
             url.searchParams.set("past_days", "31");
             url.searchParams.set("forecast_days", "16");
@@ -3280,7 +3304,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderClimatePageData(data, coordinates);
                 }
 
-                scheduleTemporalRender();
+                if (shouldRenderDailyDashboard) {
+                    scheduleTemporalRender();
+                }
             })
             .catch(() => {
                 state.climate = null;
@@ -3298,7 +3324,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderClimateError();
                 }
 
-                scheduleTemporalRender();
+                if (shouldRenderDailyDashboard) {
+                    scheduleTemporalRender();
+                }
             });
     }
 
