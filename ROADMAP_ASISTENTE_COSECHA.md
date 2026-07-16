@@ -200,3 +200,13 @@ Nota para seguir mas adelante:
 
 - este archivo sera el punto de referencia para continuar la expansion de la app
 - cuando retomemos, empezamos desde la Fase 1
+
+## Nota para retomar mañana
+
+Dejamos listo el motor temporal de 30 dias y el calendario predictivo inicial.
+
+Mañana seguimos con:
+
+- afinado de humedad y mermas
+- ajuste de estados del calendario
+- mejora visual para celular
