@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="mobile-safe min-h-screen text-slate-800 antialiased">
-    <header class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-emerald-950 via-green-900 to-lime-800 text-white shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-emerald-950 via-green-900 to-lime-800 text-white shadow-2xl shadow-emerald-950/20">
         <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 lg:px-8">
             <div class="space-y-1">
                 <h1 class="flex items-center gap-2 text-xl font-extrabold tracking-tight sm:text-3xl">
@@ -25,88 +25,31 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur sm:block">
-                    Versión Pro
-                </div>
-                <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.24em] backdrop-blur sm:px-4 sm:text-[10px]">
-                    Cosecha
-                </div>
-                <button type="button" data-logout class="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] backdrop-blur transition-colors hover:bg-white/15 sm:px-4 sm:text-xs sm:tracking-[0.2em]">
+            <nav class="flex flex-wrap items-center gap-2 sm:gap-3" aria-label="Navegación principal">
+                <button type="button" data-scroll-to="form-section" data-active="true" class="top-nav-button">
+                    Datos
+                </button>
+                <a href="dashboard.html" class="top-nav-button">
+                    Dashboard
+                </a>
+                <a href="clima.html" class="top-nav-button">
+                    Clima
+                </a>
+                <a href="mapa.html" class="top-nav-button">
+                    Mapa
+                </a>
+                <a href="history.html" class="top-nav-button">
+                    Historial
+                </a>
+                <button type="button" data-logout class="top-nav-button">
                     Salir
                 </button>
-            </div>
+            </nav>
         </div>
     </header>
 
-    <div class="mx-auto max-w-7xl px-4 py-6 pb-40 sm:px-6 md:pb-6 lg:px-8">
-        <div class="nav-drawer hidden lg:block">
-            <button type="button" class="nav-drawer-trigger" aria-label="Abrir navegación" title="Abrir navegación">
-                <span aria-hidden="true">☰</span>
-                <span class="sr-only">Abrir navegación</span>
-            </button>
-
-            <aside class="nav-drawer-panel rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
-                <div>
-                    <h2 class="mb-6 text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Navegación</h2>
-                    <nav class="space-y-2">
-                        <button type="button" id="btnMenuDashboard" data-scroll-to="form-section" data-active="true" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-green-700 transition-all">
-                            <span aria-hidden="true">🧾</span>
-                            Carga de datos
-                        </button>
-                        <a href="dashboard.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                            <span aria-hidden="true">📊</span>
-                            Dashboard
-                        </a>
-                        <a href="clima.html" id="btnMenuClima" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                            <span aria-hidden="true">🌦️</span>
-                            Clima Avanzado
-                        </a>
-                        <a href="mapa.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                            <span aria-hidden="true">🗺️</span>
-                            Ubicación / Mapa
-                        </a>
-                        <a href="history.html" class="nav-button flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-slate-600 transition-all">
-                            <span aria-hidden="true">📚</span>
-                            Historial
-                        </a>
-                    </nav>
-                </div>
-
-                <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                    <p class="font-semibold text-slate-700">Consejo rápido</p>
-                    <p class="mt-2">
-                        Calculá el escenario, guardalo y compará cómo cambia el margen según humedad, secada y flete.
-                    </p>
-                </div>
-            </aside>
-        </div>
-
-        <main class="space-y-5 lg:pl-16">
-            <nav class="fixed inset-x-3 bottom-3 z-50 rounded-[1.6rem] border border-slate-200/70 bg-white/95 p-2 shadow-2xl shadow-slate-300/40 backdrop-blur md:hidden" aria-label="Navegación móvil">
-                <div class="grid grid-cols-4 gap-2">
-                    <button type="button" data-scroll-to="form-section" data-active="true" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-green-700">
-                        <span class="text-base" aria-hidden="true">🧾</span>
-                        Datos
-                    </button>
-                    <a href="dashboard.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
-                        <span class="text-base" aria-hidden="true">📊</span>
-                        Dashboard
-                    </a>
-                    <a href="clima.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
-                        <span class="text-base" aria-hidden="true">🌦️</span>
-                        Clima
-                    </a>
-                    <a href="mapa.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
-                        <span class="text-base" aria-hidden="true">🗺️</span>
-                        Mapa
-                    </a>
-                    <a href="history.html" class="nav-button flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center text-[10px] font-semibold text-slate-600">
-                        <span class="text-base" aria-hidden="true">📚</span>
-                        Historial
-                    </a>
-                </div>
-            </nav>
+    <div class="mx-auto max-w-7xl px-4 py-6 pb-8 sm:px-6 lg:px-8">
+        <main class="space-y-5">
 
             <div id="formStatus" class="hidden rounded-[1.5rem] border px-4 py-3 text-sm font-medium shadow-sm" role="status" aria-live="polite"></div>
 
