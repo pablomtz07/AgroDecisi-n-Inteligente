@@ -2105,28 +2105,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const isImprovement = selectedNet >= todayNet;
         const chartColor = isImprovement ? "#2563eb" : "#dc2626";
         const selectedLabel = selectedRow?.dayLabel ?? "Día elegido";
-        const chartHeight = elements.graficoRentabilidad.height || 240;
-        const gradient = context.createLinearGradient(0, 0, 0, chartHeight);
-        gradient.addColorStop(0, isImprovement ? "rgba(37, 99, 235, 0.35)" : "rgba(220, 38, 38, 0.35)");
-        gradient.addColorStop(1, "rgba(255, 255, 255, 0.05)");
+        const magnitude = Math.max(Math.abs(todayNet), Math.abs(selectedNet), 1);
+        const spread = Math.max(magnitude * 0.03, 50000);
+        const axisMin = Math.min(todayNet, selectedNet) - spread;
+        const axisMax = Math.max(todayNet, selectedNet) + spread;
 
         state.chart = new Chart(context, {
-            type: "line",
+            type: "bar",
             data: {
                 labels: ["Hoy", "Día elegido"],
                 datasets: [{
                     label: "Margen neto",
                     data: [todayNet, selectedNet],
-                    borderColor: chartColor,
-                    backgroundColor: gradient,
-                    pointBackgroundColor: ["#16a34a", chartColor],
-                    pointBorderColor: "#ffffff",
-                    pointBorderWidth: 2,
-                    pointRadius: [7, 8],
-                    pointHoverRadius: 7,
-                    fill: true,
-                    tension: 0.25,
-                    borderWidth: 4
+                    backgroundColor: [
+                        "rgba(22, 163, 74, 0.78)",
+                        isImprovement ? "rgba(37, 99, 235, 0.78)" : "rgba(220, 38, 38, 0.78)"
+                    ],
+                    borderColor: [
+                        "#16a34a",
+                        chartColor
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 14,
+                    borderSkipped: false,
+                    barPercentage: 0.55,
+                    categoryPercentage: 0.62
                 }]
             },
             options: {
@@ -2162,7 +2165,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     },
                     y: {
-                        beginAtZero: true,
+                        min: axisMin,
+                        max: axisMax,
                         grid: { color: "rgba(148, 163, 184, 0.22)" },
                         ticks: {
                             color: "#64748b",
