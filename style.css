@@ -72,12 +72,14 @@ textarea:focus-visible {
     left: 0.75rem;
     top: 6.75rem;
     z-index: 60;
-    width: 21.75rem;
+    width: 18rem;
+    transform: translateX(calc(-100% + 3.25rem));
+    transition: transform 260ms ease;
 }
 
 .nav-drawer-trigger {
     position: absolute;
-    left: 0;
+    right: 0;
     top: 1rem;
     display: inline-flex;
     align-items: center;
@@ -102,15 +104,18 @@ textarea:focus-visible {
 }
 
 .nav-drawer-panel {
-    margin-left: 3.5rem;
-    width: 18rem;
-    transform: translateX(calc(-100% + 3.5rem));
-    transition: transform 260ms ease, box-shadow 260ms ease;
+    width: 100%;
+    transform: none;
+}
+
+.nav-drawer:hover,
+.nav-drawer:focus-within {
+    transform: translateX(0);
 }
 
 .nav-drawer:hover .nav-drawer-panel,
 .nav-drawer:focus-within .nav-drawer-panel {
-    transform: translateX(0);
+    transform: none;
 }
 
 .nav-drawer:hover .nav-drawer-trigger,
