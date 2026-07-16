@@ -70,8 +70,28 @@
                     </div>
                     <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
                         <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">Bruto</span>
-                        <span class="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-orange-700">Gastos</span>
+                        <span class="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-orange-700">Secada</span>
+                        <span class="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-teal-700">Flete</span>
                         <span class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-blue-700">Neto</span>
+                    </div>
+                </div>
+                <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    <div class="premium-panel rounded-[1.25rem] p-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Dia elegido</p>
+                        <p id="temporalSelectedDayLabel" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
+                    </div>
+                    <div class="premium-panel rounded-[1.25rem] p-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Estado</p>
+                        <p id="temporalSelectedState" class="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">---</p>
+                    </div>
+                    <div class="premium-panel rounded-[1.25rem] p-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Humedad</p>
+                        <p id="temporalSelectedHumidity" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
+                    </div>
+                    <div class="premium-panel rounded-[1.25rem] p-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Neto</p>
+                        <p id="temporalSelectedNet" class="mt-1 text-lg font-extrabold text-slate-900">---</p>
+                        <p id="temporalSelectedDelta" class="mt-1 text-[11px] font-semibold text-slate-500">---</p>
                     </div>
                 </div>
                 <div class="mt-4 h-[18rem] rounded-[1.5rem] border border-slate-100 bg-gradient-to-b from-white to-slate-50 p-3">
@@ -166,6 +186,6 @@
     </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="app.js?v=20260716-2"></script>
+    <script src="app.js?v=20260716-3"></script>
 </body>
 </html>

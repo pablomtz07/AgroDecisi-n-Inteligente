@@ -146,6 +146,11 @@ document.addEventListener("DOMContentLoaded", () => {
         temporalHumedad: $("temporalHumedad"),
         temporalHumedadDetalle: $("temporalHumedadDetalle"),
         temporalLista: $("temporalLista"),
+        temporalSelectedDayLabel: $("temporalSelectedDayLabel"),
+        temporalSelectedState: $("temporalSelectedState"),
+        temporalSelectedHumidity: $("temporalSelectedHumidity"),
+        temporalSelectedNet: $("temporalSelectedNet"),
+        temporalSelectedDelta: $("temporalSelectedDelta"),
         alertasLista: $("alertasLista"),
         alertasConteo: $("alertasConteo"),
         graficoRentabilidad: $("graficoRentabilidad"),
@@ -204,7 +209,9 @@ document.addEventListener("DOMContentLoaded", () => {
         humiditySource: "manual",
         priceRequestId: 0,
         climateForecast: null,
-        lastResult: null
+        lastResult: null,
+        temporalAnalysis: null,
+        selectedTemporalDayKey: null
     };
 
     const fieldIds = [
@@ -387,6 +394,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             fetchClimate(null, { includeDaily: true, forceRender: true });
         });
+
+        elements.temporalLista?.addEventListener("click", handleTemporalDaySelection);
 
         elements.navButtons.forEach((button) => {
             button.addEventListener("click", handleNavigationClick);
@@ -1808,9 +1817,9 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.recomendacion.className = `mt-2 text-base font-semibold ${resultToneClasses[result.recommendationTone] ?? resultToneClasses.info}`;
         }
 
+        renderChart(result);
         renderTemporalAnalysis(result);
         renderAlerts(result);
-        renderChart(result.ingresoBruto, result.gastosTotales, result.ingresoNeto);
     }
 
     function resetResultsPanel(message) {
@@ -2008,7 +2017,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function renderChart(bruto, gastos, neto) {
+    function renderChart(result) {
         if (!elements.graficoRentabilidad) {
             return;
         }
@@ -2025,10 +2034,95 @@ document.addEventListener("DOMContentLoaded", () => {
         state.chart = new Chart(context, {
             type: "bar",
             data: {
-                labels: ["Ingreso Bruto", "Gastos Totales", "Margen Neto"],
+                labels: ["Bruto", "Secada", "Flete", "Neto"],
                 datasets: [{
-                    data: [bruto, gastos, neto],
-                    backgroundColor: ["#16a34a", "#f97316", neto >= 0 ? "#2563eb" : "#dc2626"],
+                    data: [
+                        result?.ingresoBruto ?? 0,
+                        result?.costoTotalSecada ?? 0,
+                        result?.costoTotalFlete ?? 0,
+                        result?.ingresoNeto ?? 0
+                    ],
+                    backgroundColor: [
+                        "#16a34a",
+                        "#f97316",
+                        "#0f766e",
+                        (result?.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"
+                    ],
+                    borderRadius: 12,
+                    borderSkipped: false,
+                    barThickness: 42
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (tooltipItem) => ` ${formatCurrency(tooltipItem.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "#e2e8f0" },
+                        ticks: {
+                            callback: (value) => `$ ${formatCompactNumber(value)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderTemporalChart(selectedRow, baseResult = null) {
+        if (!elements.graficoRentabilidad) {
+            return;
+        }
+
+        if (!selectedRow && !baseResult) {
+            clearChart();
+            return;
+        }
+
+        const context = elements.graficoRentabilidad.getContext("2d");
+        if (!context) {
+            return;
+        }
+
+        if (state.chart) {
+            state.chart.destroy();
+        }
+
+        const bars = selectedRow ?? {
+            ingresoBruto: baseResult?.ingresoBruto ?? 0,
+            costoSecada: baseResult?.costoTotalSecada ?? 0,
+            costoFlete: baseResult?.costoTotalFlete ?? 0,
+            ingresoNeto: baseResult?.ingresoNeto ?? 0
+        };
+
+        state.chart = new Chart(context, {
+            type: "bar",
+            data: {
+                labels: ["Bruto", "Secada", "Flete", "Neto"],
+                datasets: [{
+                    data: [
+                        bars.ingresoBruto ?? 0,
+                        bars.costoSecada ?? 0,
+                        bars.costoFlete ?? 0,
+                        bars.ingresoNeto ?? 0
+                    ],
+                    backgroundColor: [
+                        "#16a34a",
+                        "#f97316",
+                        "#0f766e",
+                        (bars.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"
+                    ],
                     borderRadius: 12,
                     borderSkipped: false,
                     barThickness: 42
@@ -2085,17 +2179,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!result) {
+            state.temporalAnalysis = null;
+            state.selectedTemporalDayKey = null;
             resetTemporalPanel("Calcula un escenario para ver el calendario predictivo de 30 dias.");
             return;
         }
 
         const analysis = buildTemporalAnalysis(result);
         if (!analysis.available) {
+            state.temporalAnalysis = null;
+            state.selectedTemporalDayKey = null;
             resetTemporalPanel(analysis.message);
             return;
         }
 
         const { best, today, threshold, recommendation } = analysis;
+        const selectedKey = state.selectedTemporalDayKey && analysis.rows.some((row) => row.key === state.selectedTemporalDayKey)
+            ? state.selectedTemporalDayKey
+            : today.key;
+        const selectedRow = analysis.rows.find((row) => row.key === selectedKey) ?? today;
+        state.temporalAnalysis = analysis;
+        state.selectedTemporalDayKey = selectedRow.key;
+
         const deltaLabel = formatSignedCurrency(best.ingresoNeto - today.ingresoNeto);
 
         elements.temporalResumen.textContent = recommendation.summary;
@@ -2110,10 +2215,14 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.temporalHumedadDetalle.textContent = analysis.summary;
 
         elements.temporalLista.className = "mt-3";
-        elements.temporalLista.innerHTML = buildTemporalCalendarMarkup(analysis);
+        elements.temporalLista.innerHTML = buildTemporalCalendarMarkup(analysis, selectedRow.key);
+        renderTemporalSelectionSummary(selectedRow, analysis);
+        renderTemporalChart(selectedRow);
     }
 
     function resetTemporalPanel(message) {
+        state.temporalAnalysis = null;
+        state.selectedTemporalDayKey = null;
         if (elements.temporalResumen) {
             elements.temporalResumen.textContent = message;
         }
@@ -2148,6 +2257,7 @@ document.addEventListener("DOMContentLoaded", () => {
             empty.textContent = message;
             elements.temporalLista.appendChild(empty);
         }
+        resetTemporalSelectionSummary();
     }
 
     function buildTemporalAnalysis(result) {
@@ -2545,7 +2655,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function buildTemporalCalendarMarkup(analysis) {
+    function buildTemporalCalendarMarkup(analysis, selectedKey = null) {
         const weekdayLabels = ["L", "M", "X", "J", "V", "S", "D"];
         const startOffset = (analysis.today.date.getDay() + 6) % 7;
         const emptyCells = Array.from({ length: startOffset }, () => `
@@ -2612,8 +2722,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="pb-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">${label}</div>
         `).join("");
 
-        const dayCells = analysis.rows.map((row) => `
-            <div class="aspect-square min-h-0 rounded-2xl border p-2 shadow-sm ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""}">
+        const dayCells = analysis.rows.map((row) => {
+            const isSelected = row.key === selectedKey;
+            return `
+            <button type="button" data-day-key="${row.key}" class="temporal-day-cell aspect-square min-h-0 rounded-2xl border p-2 text-left shadow-sm transition-all ${statePalette[row.state].cell} ${row.isBest ? "ring-2 ring-emerald-500/30" : ""} ${isSelected ? "scale-[1.02] ring-2 ring-slate-900/20 shadow-lg" : "hover:-translate-y-0.5 hover:shadow-md"}" aria-pressed="${isSelected ? "true" : "false"}">
                 <div class="flex h-full flex-col justify-between gap-2 overflow-hidden">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
@@ -2640,8 +2752,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="font-semibold ${row.ingresoNeto >= 0 ? "text-slate-700" : "text-red-600"}">${formatSignedCurrency(row.deltaVsToday)}</span>
                     </div>
                 </div>
-            </div>
-        `).join("");
+            </button>
+        `;}).join("");
 
         return `
             <div class="space-y-3">
@@ -2663,6 +2775,70 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             </div>
         `;
+    }
+
+    function renderTemporalSelectionSummary(row, analysis) {
+        if (!row) {
+            resetTemporalSelectionSummary();
+            return;
+        }
+
+        if (elements.temporalSelectedDayLabel) {
+            elements.temporalSelectedDayLabel.textContent = `${row.dayLabel} ${row.dayNumber}`;
+        }
+
+        if (elements.temporalSelectedState) {
+            elements.temporalSelectedState.textContent = row.stateLabel;
+            elements.temporalSelectedState.className = `mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold ${row.stateTone}`;
+        }
+
+        if (elements.temporalSelectedHumidity) {
+            elements.temporalSelectedHumidity.textContent = `${formatDecimal(row.humidityEstimada, 1)}%`;
+        }
+
+        if (elements.temporalSelectedNet) {
+            elements.temporalSelectedNet.textContent = formatCurrency(row.ingresoNeto);
+        }
+
+        if (elements.temporalSelectedDelta) {
+            elements.temporalSelectedDelta.textContent = `vs hoy: ${formatSignedCurrency(row.deltaVsToday)}`;
+            elements.temporalSelectedDelta.className = `mt-1 text-[11px] font-semibold ${row.deltaVsToday >= 0 ? "text-emerald-700" : "text-red-600"}`;
+        }
+    }
+
+    function resetTemporalSelectionSummary() {
+        if (elements.temporalSelectedDayLabel) {
+            elements.temporalSelectedDayLabel.textContent = "---";
+        }
+        if (elements.temporalSelectedState) {
+            elements.temporalSelectedState.textContent = "---";
+            elements.temporalSelectedState.className = "mt-2 inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500";
+        }
+        if (elements.temporalSelectedHumidity) {
+            elements.temporalSelectedHumidity.textContent = "---";
+        }
+        if (elements.temporalSelectedNet) {
+            elements.temporalSelectedNet.textContent = "---";
+        }
+        if (elements.temporalSelectedDelta) {
+            elements.temporalSelectedDelta.textContent = "---";
+            elements.temporalSelectedDelta.className = "mt-1 text-[11px] font-semibold text-slate-500";
+        }
+    }
+
+    function handleTemporalDaySelection(event) {
+        const button = event.target.closest("button[data-day-key]");
+        if (!button || !state.temporalAnalysis?.rows?.length) {
+            return;
+        }
+
+        const nextKey = button.dataset.dayKey;
+        if (!nextKey || nextKey === state.selectedTemporalDayKey) {
+            return;
+        }
+
+        state.selectedTemporalDayKey = nextKey;
+        renderTemporalAnalysis(state.lastResult);
     }
 
     function isWetWeather(forecast) {
