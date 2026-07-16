@@ -2032,7 +2032,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         state.chart = new Chart(context, {
-            type: "bar",
+            type: "line",
             data: {
                 labels: ["Bruto", "Secada", "Flete", "Neto"],
                 datasets: [{
@@ -2042,15 +2042,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         result?.costoTotalFlete ?? 0,
                         result?.ingresoNeto ?? 0
                     ],
-                    backgroundColor: [
-                        "#16a34a",
-                        "#f97316",
-                        "#0f766e",
-                        (result?.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"
-                    ],
-                    borderRadius: 12,
-                    borderSkipped: false,
-                    barThickness: 42
+                    borderColor: (result?.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626",
+                    backgroundColor: (result?.ingresoNeto ?? 0) >= 0 ? "rgba(37, 99, 235, 0.14)" : "rgba(220, 38, 38, 0.14)",
+                    pointBackgroundColor: ["#16a34a", "#f97316", "#0f766e", (result?.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"],
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 3
                 }]
             },
             options: {
@@ -2107,7 +2108,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         state.chart = new Chart(context, {
-            type: "bar",
+            type: "line",
             data: {
                 labels: ["Bruto", "Secada", "Flete", "Neto"],
                 datasets: [{
@@ -2117,15 +2118,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         bars.costoFlete ?? 0,
                         bars.ingresoNeto ?? 0
                     ],
-                    backgroundColor: [
-                        "#16a34a",
-                        "#f97316",
-                        "#0f766e",
-                        (bars.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"
-                    ],
-                    borderRadius: 12,
-                    borderSkipped: false,
-                    barThickness: 42
+                    borderColor: (bars.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626",
+                    backgroundColor: (bars.ingresoNeto ?? 0) >= 0 ? "rgba(37, 99, 235, 0.14)" : "rgba(220, 38, 38, 0.14)",
+                    pointBackgroundColor: ["#16a34a", "#f97316", "#0f766e", (bars.ingresoNeto ?? 0) >= 0 ? "#2563eb" : "#dc2626"],
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 3
                 }]
             },
             options: {
